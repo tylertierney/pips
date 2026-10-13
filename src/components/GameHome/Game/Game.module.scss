@@ -1,0 +1,24 @@
+.cell {
+  position: relative;
+
+  &.backgroundCell {
+    &::before {
+      z-index: -1;
+      content: '';
+      position: absolute;
+      background-color: #e1cbc5;
+      width: calc(100% - 0.5em);
+      height: calc(100% - 0.5em);
+      border-radius: 0.5em;
+    }
+
+    &::after {
+      z-index: -2;
+      position: absolute;
+      content: '';
+      background-color: #dbc2b9;
+      width: calc(100% + 0.5em);
+      height: calc(100% + 0.5em);
+    }
+  }
+}
