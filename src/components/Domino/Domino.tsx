@@ -25,7 +25,7 @@ export const Domino = ({
 }: DominoProps & Omit<ComponentProps<'div'>, 'id'>) => {
   return (
     <div
-      id={`${idPrefix ?? ''}-domino-${id}`}
+      id={`${idPrefix ? idPrefix + '-' : ''}domino-${id}`}
       className={cn(
         styles.domino,
         'flex items-center justify-center p-0.5',
@@ -91,7 +91,7 @@ export const Two = ({ cellSize = 60 }: DominoSideProps) => {
       <div
         className='flex flex-col grow items-stretch'
         style={{
-          padding: `0 ${cellSize / 7.5}px`,
+          padding: `0 ${cellSize / 15}px`,
         }}
       >
         <div className='flex h-1/2 items-center w-full'>
@@ -133,7 +133,7 @@ export const Four = ({ cellSize = 60 }: DominoSideProps) => {
       <div
         className='flex flex-col grow items-stretch'
         style={{
-          padding: `0 ${cellSize / 15}px`,
+          padding: `0 ${cellSize / 30}px`,
         }}
       >
         <div className='flex grow items-center justify-between'>

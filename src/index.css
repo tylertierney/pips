@@ -5,12 +5,41 @@
 }
 
 body {
-  color: var(--text-color);
+  --bg-color: rgb(31, 35, 46);
+  --color-primary: white;
+
+  --stroke-pips-region-blue: #003674;
+  --bg-pips-region-blue: #1240764d;
+
+  --stroke-pips-region-purple: #8046b1;
+  --bg-pips-region-purple: #8046b14d;
+
+  --bg-pips-region-light-blue: #00a3b84d;
+  --stroke-pips-region-light-blue: #006a78;
+
+  --bg-pips-region-pink: #f93a7a4d;
+  --stroke-pips-region-pink: #ea004e;
+
+  --bg-pips-region-orange: #fd9d094d;
+  --stroke-pips-region-orange: #ca4e00;
+
+  --bg-pips-region-green: #5476014d;
+  --stroke-pips-region-green: #4c6b00;
+
+  &.light-theme {
+    --bg-color: white;
+    --color-primary: black;
+  }
+}
+
+body {
+  color: var(--color-primary);
   background-color: var(--bg-color);
   display: flex;
   flex-direction: column;
   margin: 0;
   font-family: sans-serif;
+  background: var(--bg-color);
 }
 
 #root {

@@ -1,17 +1,20 @@
 import styles from './Game.module.scss'
-import { cn, getTranslateFromRotation } from '../../../utils/utils'
-import type { IDomino, Today } from '../../../models/models'
 import {
-  BottomLeftCorner,
-  BottomRightCorner,
-  TopLeftCorner,
-  TopRightCorner,
-} from '../../CornerSvg/CornerSvg'
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+  cn,
+  convertGameDominoesToUiDominoes,
+  getTranslateFromRotation,
+  isPlacedInBounds,
+  isValidPlacement,
+  traverseStackToFindCell,
+} from '../../../utils/utils'
+import type { Difficulty, IDomino, Today } from '../../../models/models'
+import { useEffect, useState, type PointerEvent } from 'react'
 import { Domino } from '../../Domino/Domino'
-import { useCellSize } from '../../../hooks/useCellSize'
+import { Regions } from '../../Regions/Regions'
+import { useOutletContext, useParams } from 'react-router-dom'
+import { useGridBuilder } from '../../../hooks/useGridBuilder'
 
-type UiDomino = {
+export type UiDomino = {
   id: number
   r?: number
   c?: number
@@ -20,103 +23,20 @@ type UiDomino = {
   selected?: boolean
 }
 
-type GameProps = {
-  today: Today
-  difficulty: 'easy' | 'medium' | 'hard'
-}
-
-export const Game = ({ today, difficulty }: GameProps) => {
+export const Game = () => {
+  const { today } = useOutletContext<{ today: Today }>()
+  const { difficulty } = useParams() as { difficulty: Difficulty }
   const game = today[difficulty]
 
-  const { regions } = game
-
-  const height =
-    Math.max(...regions.flatMap(({ indices }) => indices.map(([row]) => row))) +
-    1
-  const width =
-    Math.max(
-      ...regions.flatMap(({ indices }) => indices.map(([_, col]) => col)),
-    ) + 1
-
-  const cellSize = useCellSize(width)
-
-  const backgroundCells = new Set<string>(
-    regions.flatMap(({ indices }) => indices.map((coords) => String(coords))),
-  )
-
-  const cells: Array<
-    {
-      r: number
-      c: number
-      isBackgroundCell: boolean
-      cornerSvgs: Array<ReactNode>
-    } & CSSProperties
-  > = Array.from({ length: height })
-    .map((_, r) => {
-      return Array.from({ length: width }).map((_, c) => {
-        return {
-          r: r,
-          c: c,
-          isBackgroundCell: backgroundCells.has(String([r, c])),
-          cornerSvgs: [],
-        }
-      })
-    })
-    .flat()
-
-  cells.forEach((cell) => {
-    const { r, c, isBackgroundCell } = cell
-    const backgroundCellNeighbors = {
-      top: backgroundCells.has(String([r - 1, c])),
-      right: backgroundCells.has(String([r, c + 1])),
-      bottom: backgroundCells.has(String([r + 1, c])),
-      left: backgroundCells.has(String([r, c - 1])),
-    }
-    const { top, right, bottom, left } = backgroundCellNeighbors
-
-    if (isBackgroundCell) {
-      if (!top && !right) cell.borderTopRightRadius = '0.5em'
-      if (!top && !left) cell.borderTopLeftRadius = '0.5em'
-      if (!bottom && !right) cell.borderBottomRightRadius = '0.5em'
-      if (!bottom && !left) cell.borderBottomLeftRadius = '0.5em'
-    } else {
-      if (top && right)
-        cell.cornerSvgs.push(
-          <TopRightCorner key='top-right' className='absolute w-full h-full' />,
-        )
-      if (top && left)
-        cell.cornerSvgs.push(
-          <TopLeftCorner key='top-left' className='absolute w-full h-full' />,
-        )
-      if (bottom && right)
-        cell.cornerSvgs.push(
-          <BottomRightCorner
-            key='bottom-right'
-            className='absolute w-full h-full'
-          />,
-        )
-      if (bottom && left)
-        cell.cornerSvgs.push(
-          <BottomLeftCorner
-            key='bottom-left'
-            className='absolute w-full h-full'
-          />,
-        )
-    }
-  })
+  const { height, width, cellSize, cells } = useGridBuilder(game)
 
   const [dominoes, setDominoes] = useState<UiDomino[]>(
-    game.dominoes.map((d, idx) => {
-      const res = { id: idx, domino: d, rotation: 0 }
-      if (idx === 0) {
-        return { ...res, r: 0, c: 0, rotation: 0 }
-      }
-      if (idx === 1) {
-        return { ...res, r: 1, c: 2, rotation: 270 }
-      }
-      return res
-    }),
+    convertGameDominoesToUiDominoes(game.dominoes),
   )
+
+  useEffect(() => {
+    setDominoes(convertGameDominoesToUiDominoes(game.dominoes))
+  }, [game])
 
   const placedDominoes = dominoes.filter(
     ({ r, c }) => r !== undefined && c !== undefined,
@@ -130,6 +50,8 @@ export const Game = ({ today, difficulty }: GameProps) => {
     offsetX: number
     offsetY: number
     dominoId: number
+    rotation: number
+    domino: IDomino
   } | null>(null)
 
   const draggedDomino = dominoes.find((d) => d.id === dragState?.dominoId)
@@ -139,11 +61,6 @@ export const Game = ({ today, difficulty }: GameProps) => {
       setDragState((prev) =>
         prev ? { ...prev, top: e.clientY, left: e.clientX } : null,
       )
-      if (isHoldingDownMouse) {
-        document.body.style.overflowY = 'hidden'
-        document.body.style.touchAction = 'none'
-        document.body.style.overscrollBehavior = 'contain'
-      }
     }
 
     window.addEventListener('pointermove', cb)
@@ -153,36 +70,129 @@ export const Game = ({ today, difficulty }: GameProps) => {
 
   useEffect(() => {
     const cb = () => {
+      if (dragState) {
+        const coords = [
+          dragState.left - dragState.offsetX + 0.5 * cellSize,
+          dragState.top - dragState.offsetY + 0.5 * cellSize,
+        ]
+        const targetingTray = Boolean(
+          document
+            .elementsFromPoint(coords[0], coords[1])
+            .find((el) => (el as HTMLElement).id === 'tray'),
+        )
+
+        if (targetingTray) {
+          setDominoes((prev) =>
+            prev.map((d) =>
+              d.id === dragState.dominoId
+                ? { ...d, r: undefined, c: undefined }
+                : d,
+            ),
+          )
+        } else {
+          const targetCellCoords = traverseStackToFindCell(coords[0], coords[1])
+          if (targetCellCoords) {
+            const [targetR, targetC] = targetCellCoords
+            const valid = isValidPlacement({
+              targetR,
+              targetC,
+              rotation: dragState.rotation,
+              dominoId: dragState.dominoId,
+              width,
+              height,
+              game,
+              dominoes,
+            })
+
+            if (valid) {
+              setDominoes((prev) =>
+                prev.map((d) =>
+                  d.id === dragState.dominoId
+                    ? { ...d, r: targetR, c: targetC }
+                    : d,
+                ),
+              )
+            }
+          }
+        }
+      }
+
       setDragState(null)
       setIsHoldingDownMouse(false)
-      document.body.style.overflowY = 'auto'
-      document.body.style.touchAction = 'unset'
-      document.body.style.overscrollBehavior = 'unset'
     }
+
     window.addEventListener('pointerup', cb)
 
     return () => window.removeEventListener('pointerup', cb)
-  }, [])
+  }, [dragState, game])
+
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setIsHoldingDownMouse(true)
+  }
+
+  const onPointerMove = (
+    e: PointerEvent<HTMLDivElement>,
+    uiDomino: UiDomino,
+  ) => {
+    if (dragState?.dominoId) return
+
+    const movement = Math.max(Math.abs(e.movementX), Math.abs(e.movementY))
+
+    if (isHoldingDownMouse && movement > 2) {
+      const targetRect = e.currentTarget.getBoundingClientRect()
+
+      setDragState({
+        dominoId: uiDomino.id,
+        top: e.clientY,
+        left: e.clientX,
+        offsetY: e.clientY - targetRect.top,
+        offsetX: e.clientX - targetRect.left,
+        rotation: uiDomino.rotation,
+        domino: uiDomino.domino,
+      })
+    }
+  }
+
+  const onClick = (uiDomino: UiDomino) => {
+    setDominoes((prev) =>
+      prev.map((d) => {
+        const isNewSelectedDomino = uiDomino.id === d.id
+        const isInTray = d.r === undefined && d.c === undefined
+
+        return {
+          ...d,
+          selected: uiDomino.id === d.id ? true : false,
+          rotation: isNewSelectedDomino
+            ? d.rotation + 90
+            : isInTray && d.rotation % 180
+              ? d.rotation + 90
+              : d.rotation,
+        }
+      }),
+    )
+  }
 
   return (
-    <div className='flex flex-col justify-center items-center grow gap-16 px-[8px]'>
-      <div className={cn('relative', styles.container)}>
+    <div className='flex flex-col justify-center items-center grow px-2'>
+      <div className={cn('relative my-16', styles.container)}>
         <div
+          className='select-none'
           style={{
             display: 'grid',
             gridTemplateRows: `repeat(${height}, ${cellSize}px)`,
             gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
+            zIndex: 0,
           }}
         >
           {cells.map((cell) => {
             const { r, c, isBackgroundCell, ...style } = cell
             const coords = [r, c]
-            const stringCoords = String(coords)
 
             return (
               <div
                 key={r * width + c}
-                data-coords={stringCoords}
+                data-coords={JSON.stringify(coords)}
                 className={cn(
                   'flex justify-center items-center aspect-square z-0 overflow-hidden select-none',
                   styles.cell,
@@ -190,16 +200,16 @@ export const Game = ({ today, difficulty }: GameProps) => {
                 )}
                 style={{ ...style }}
               >
-                <span className='text-xs text-gray-600'>{stringCoords}</span>
                 {!isBackgroundCell && cell.cornerSvgs.map((svg) => svg)}
               </div>
             )
           })}
 
-          {placedDominoes.map(({ id, rotation, domino, r: _r, c: _c }) => {
+          {placedDominoes.map((uiDomino) => {
+            const { r: _r, c: _c, id, domino, rotation } = uiDomino
             const r = _r as number
             const c = _c as number
-            return (
+            return dragState?.dominoId !== uiDomino.id ? (
               <Domino
                 id={id}
                 key={id}
@@ -207,20 +217,41 @@ export const Game = ({ today, difficulty }: GameProps) => {
                 rotation={rotation}
                 className='absolute'
                 cellSize={cellSize}
+                onClick={() => onClick(uiDomino)}
+                onPointerDown={onPointerDown}
+                onPointerMove={
+                  !dragState?.dominoId
+                    ? (e) => onPointerMove(e, uiDomino)
+                    : undefined
+                }
                 style={{
                   top: r * cellSize + 'px',
                   left: c * cellSize + 'px',
                   rotate: (rotation ?? 0) + 'deg',
                   transformOrigin: 'top left',
                   translate: getTranslateFromRotation(rotation),
+                  touchAction: 'none',
+                  pointerEvents:
+                    dragState && dragState.dominoId !== uiDomino.id
+                      ? 'none'
+                      : 'all',
                 }}
               />
-            )
+            ) : null
           })}
+          <Regions
+            regions={game.regions}
+            cellSize={cellSize}
+            gridHeight={height}
+            gridWidth={width}
+          />
         </div>
       </div>
       <div className='h-0.5 w-full bg-gray-200'></div>
-      <div className='flex gap-3 px-6 justify-center flex-wrap'>
+      <div
+        className='flex gap-3 px-6 justify-center flex-wrap py-16 select-none'
+        id='tray'
+      >
         {dominoes.map((uiDomino, idx) => {
           return (
             <div
@@ -237,48 +268,9 @@ export const Game = ({ today, difficulty }: GameProps) => {
                   <Domino
                     id={uiDomino.id}
                     idPrefix='tray'
-                    onPointerMove={(e) => {
-                      const movement = Math.max(
-                        Math.abs(e.movementX),
-                        Math.abs(e.movementY),
-                      )
-
-                      if (isHoldingDownMouse && movement > 2) {
-                        const targetRect =
-                          e.currentTarget.getBoundingClientRect()
-
-                        setDragState({
-                          dominoId: uiDomino.id,
-                          top: e.clientY,
-                          left: e.clientX,
-                          offsetY: e.clientY - targetRect.top,
-                          offsetX: e.clientX - targetRect.left,
-                        })
-                      }
-                    }}
-                    onPointerDown={(e) => {
-                      e.currentTarget.setPointerCapture(e.pointerId)
-                      setIsHoldingDownMouse(true)
-                    }}
-                    onClick={() => {
-                      setDominoes((prev) =>
-                        prev.map((d) => {
-                          const isNewSelectedDomino = uiDomino.id === d.id
-                          const isInTray =
-                            d.r === undefined && d.c === undefined
-
-                          return {
-                            ...d,
-                            selected: uiDomino.id === d.id ? true : false,
-                            rotation: isNewSelectedDomino
-                              ? d.rotation + 90
-                              : isInTray && d.rotation % 180
-                                ? d.rotation + 90
-                                : d.rotation,
-                          }
-                        }),
-                      )
-                    }}
+                    onPointerMove={(e) => onPointerMove(e, uiDomino)}
+                    onPointerDown={onPointerDown}
+                    onClick={() => onClick(uiDomino)}
                     cellSize={cellSize}
                     domino={uiDomino.domino}
                     className='p-0'
@@ -289,8 +281,10 @@ export const Game = ({ today, difficulty }: GameProps) => {
                       marginLeft: -1 * 0.1 * cellSize + 'px',
                       rotate: (uiDomino.rotation ?? 0) + 'deg',
                       touchAction: 'none',
+                      zIndex: 0,
                       ...(uiDomino.selected
                         ? {
+                            zIndex: 1,
                             position: 'absolute',
                             top: 0,
                             left: 0,
@@ -321,9 +315,42 @@ export const Game = ({ today, difficulty }: GameProps) => {
             opacity: 0.8,
             translate: getTranslateFromRotation(draggedDomino.rotation),
             scale: 1,
-            touchAction: 'none',
+            zIndex: 1,
           }}
         />
+      )}
+      {dragState && draggedDomino && (
+        <>
+          {/* <span
+            style={{
+              position: 'fixed',
+              top: dragState.top - dragState.offsetY + 0.5 * cellSize,
+              left: dragState.left - dragState.offsetX + 0.5 * cellSize,
+              height: '6px',
+              width: '6px',
+              borderRadius: '100%',
+              background: 'red',
+              zIndex: 1,
+            }}
+          ></span> */}
+          {/* <span
+            style={{
+              position: 'fixed',
+              top: isVertical(dragState.rotation)
+                ? dragState.top - dragState.offsetY + 1.5 * cellSize
+                : dragState.top - dragState.offsetY + 0.5 * cellSize,
+              left: isVertical(dragState.rotation)
+                ? dragState.left - dragState.offsetX + 0.5 * cellSize
+                : dragState.left - dragState.offsetX + 1.5 * cellSize,
+
+              height: '6px',
+              width: '6px',
+              borderRadius: '100%',
+              background: 'red',
+              zIndex: 1,
+            }}
+          ></span> */}
+        </>
       )}
     </div>
   )

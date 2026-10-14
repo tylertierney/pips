@@ -10,6 +10,8 @@ export const useCellSize = (gridWidth: number) => {
   )
 
   useEffect(() => {
+    setCellSize(getCellSizeFromWindow(gridWidth, window.innerWidth - 16))
+
     const cb = (e: Event) => {
       const w = e.target as Window
       const screenWidth = w.innerWidth
@@ -20,7 +22,7 @@ export const useCellSize = (gridWidth: number) => {
     window.addEventListener('resize', cb)
 
     return () => window.removeEventListener('resize', cb)
-  }, [])
+  }, [gridWidth])
 
   return cellSize
 }

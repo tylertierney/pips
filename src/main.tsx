@@ -6,6 +6,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { GameHome } from './components/GameHome/GameHome.tsx'
 import _today from './game2.json'
 import type { Today } from './models/models.ts'
+import { Game } from './components/GameHome/Game/Game.tsx'
 
 const today = _today as Today
 
@@ -24,6 +25,12 @@ const router = createBrowserRouter([
         loader: ({ params }) => {
           return { ...today, index: parseInt(params.gameIndex ?? '0', 10) || 0 }
         },
+        children: [
+          {
+            path: ':difficulty',
+            element: <Game />,
+          },
+        ],
       },
     ],
   },
