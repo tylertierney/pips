@@ -28,11 +28,16 @@ export const Domino = ({
       id={`${idPrefix ? idPrefix + '-' : ''}domino-${id}`}
       className={cn(
         styles.domino,
-        'flex items-center justify-center p-0.5',
+        'flex items-center justify-center p-0.5 cursor-pointer',
         selected && 'scale-110',
         className,
       )}
-      style={{ height: cellSize + 'px', width: cellSize * 2 + 'px', ...style }}
+      style={{
+        height: cellSize + 'px',
+        width: cellSize * 2 + 'px',
+        scale: selected ? 1.2 : 1,
+        ...style,
+      }}
       {...rest}
     >
       <div

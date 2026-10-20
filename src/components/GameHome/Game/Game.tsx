@@ -5,6 +5,7 @@ import {
   getTranslateFromRotation,
   isPlacedInBounds,
   isValidPlacement,
+  isVertical,
   traverseStackToFindCell,
 } from '../../../utils/utils'
 import type { Difficulty, IDomino, Today } from '../../../models/models'
@@ -86,7 +87,7 @@ export const Game = () => {
             prev.map((d) =>
               d.id === dragState.dominoId
                 ? { ...d, r: undefined, c: undefined }
-                : d,
+                : { ...d },
             ),
           )
         } else {
@@ -106,19 +107,41 @@ export const Game = () => {
 
             if (valid) {
               setDominoes((prev) =>
-                prev.map((d) =>
-                  d.id === dragState.dominoId
-                    ? { ...d, r: targetR, c: targetC }
-                    : d,
-                ),
+                prev.map((d) => {
+                  if (d.id === dragState.dominoId) {
+                    return { ...d, r: targetR, c: targetC, selected: false }
+                  }
+                  // const isInTray = d.r === undefined && d.c === undefined
+
+                  return {
+                    ...d,
+                    // rotation:
+                    //   isInTray && d.rotation % 180
+                    //     ? d.rotation + 90
+                    //     : d.rotation,
+                  }
+                }),
               )
             }
           }
         }
+
+        setDominoes((prev) =>
+          prev.map((d) => {
+            const isInTray = d.r === undefined && d.c === undefined
+            return {
+              ...d,
+              selected: false,
+              rotation:
+                isInTray && d.rotation % 180 ? d.rotation + 90 : d.rotation,
+            }
+          }),
+        )
       }
 
       setDragState(null)
       setIsHoldingDownMouse(false)
+      setDominoes((arr) => arr.map((d) => ({ ...d, selected: false })))
     }
 
     window.addEventListener('pointerup', cb)
@@ -211,6 +234,7 @@ export const Game = () => {
             const c = _c as number
             return dragState?.dominoId !== uiDomino.id ? (
               <Domino
+                selected={uiDomino.selected}
                 id={id}
                 key={id}
                 domino={domino}
@@ -235,6 +259,13 @@ export const Game = () => {
                     dragState && dragState.dominoId !== uiDomino.id
                       ? 'none'
                       : 'all',
+                  ...(uiDomino.selected
+                    ? {
+                        transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
+                        // transformOrigin: `50% 50%`,
+                        translate: 0,
+                      }
+                    : {}),
                 }}
               />
             ) : null
@@ -266,6 +297,7 @@ export const Game = () => {
               {!placedDominoes.find(({ id }) => id === idx) &&
                 dragState?.dominoId !== uiDomino.id && (
                   <Domino
+                    selected={uiDomino.selected}
                     id={uiDomino.id}
                     idPrefix='tray'
                     onPointerMove={(e) => onPointerMove(e, uiDomino)}
@@ -279,9 +311,9 @@ export const Game = () => {
                       width: 2 * cellSize + 'px',
                       flexShrink: 0,
                       marginLeft: -1 * 0.1 * cellSize + 'px',
-                      rotate: (uiDomino.rotation ?? 0) + 'deg',
                       touchAction: 'none',
                       zIndex: 0,
+                      rotate: (uiDomino.rotation ?? 0) + 'deg',
                       ...(uiDomino.selected
                         ? {
                             zIndex: 1,
@@ -311,10 +343,13 @@ export const Game = () => {
             left: dragState.left - dragState.offsetX,
             transition: 'none',
             rotate: draggedDomino.rotation + 'deg',
-            transformOrigin: 'top left',
             opacity: 0.8,
+            transformOrigin: 'top left',
             translate: getTranslateFromRotation(draggedDomino.rotation),
-            scale: 1,
+            scale: 1.2,
+            // transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
+            // translate: isVertical(dragState.rotation) ? `0 -50%` : `50% 0%`,
+            // scale: 1,
             zIndex: 1,
           }}
         />

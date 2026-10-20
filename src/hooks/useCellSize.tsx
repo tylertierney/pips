@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 const getCellSizeFromWindow = (gridWidth: number, windowWidth: number) => {
-  return Math.min(~~((windowWidth - 16) / gridWidth), 60)
+  return Math.min(~~((windowWidth - 16) / gridWidth), 52)
 }
 
 export const useCellSize = (gridWidth: number) => {
