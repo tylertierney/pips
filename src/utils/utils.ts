@@ -36,6 +36,14 @@ export const isVertical = (rotation: number): boolean => {
   return true
 }
 
+export const clickedOnDomino = (e: MouseEvent): boolean => {
+  const elementStack = document.elementsFromPoint(e.clientX, e.clientY)
+
+  const found = elementStack.find((el) => el.id.includes('domino'))
+
+  return Boolean(found)
+}
+
 export const traverseStackToFindCell = (
   x: number,
   y: number,

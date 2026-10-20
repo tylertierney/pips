@@ -29,13 +29,13 @@ export const Domino = ({
       className={cn(
         styles.domino,
         'flex items-center justify-center p-0.5 cursor-pointer',
-        selected && 'scale-110',
+        // selected && 'scale-110',
         className,
       )}
       style={{
         height: cellSize + 'px',
         width: cellSize * 2 + 'px',
-        scale: selected ? 1.2 : 1,
+        // scale: selected ? 1.2 : 1,
         ...style,
       }}
       {...rest}

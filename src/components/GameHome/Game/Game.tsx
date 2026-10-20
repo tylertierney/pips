@@ -1,5 +1,6 @@
 import styles from './Game.module.scss'
 import {
+  clickedOnDomino,
   cn,
   convertGameDominoesToUiDominoes,
   getTranslateFromRotation,
@@ -70,7 +71,11 @@ export const Game = () => {
   }, [])
 
   useEffect(() => {
-    const cb = () => {
+    const cb = (e: MouseEvent) => {
+      const clickedDomino = clickedOnDomino(e)
+
+      console.log(clickedDomino)
+
       if (dragState) {
         const coords = [
           dragState.left - dragState.offsetX + 0.5 * cellSize,
@@ -111,14 +116,9 @@ export const Game = () => {
                   if (d.id === dragState.dominoId) {
                     return { ...d, r: targetR, c: targetC, selected: false }
                   }
-                  // const isInTray = d.r === undefined && d.c === undefined
 
                   return {
                     ...d,
-                    // rotation:
-                    //   isInTray && d.rotation % 180
-                    //     ? d.rotation + 90
-                    //     : d.rotation,
                   }
                 }),
               )
@@ -141,7 +141,55 @@ export const Game = () => {
 
       setDragState(null)
       setIsHoldingDownMouse(false)
-      setDominoes((arr) => arr.map((d) => ({ ...d, selected: false })))
+      if (!clickedDomino) {
+        setDominoes((arr) =>
+          arr.map((d) => {
+            const isPlaced = d.r !== undefined || d.c !== undefined
+            const isSelected = Boolean(d.selected)
+
+            const validPlacementParams: Parameters<typeof isValidPlacement>[0] =
+              {
+                targetR: d.r as number,
+                targetC: d.c as number,
+                dominoes: arr,
+                dominoId: d.id,
+                game,
+                width,
+                height,
+                rotation: d.rotation,
+              }
+
+            if (
+              isPlaced &&
+              isSelected &&
+              !isValidPlacement(validPlacementParams)
+            ) {
+              console.log('resetting domino state')
+              let newRotation = 90
+              while (newRotation < 360) {
+                if (
+                  isValidPlacement({
+                    ...validPlacementParams,
+                    rotation: d.rotation + newRotation,
+                  })
+                ) {
+                  return {
+                    ...d,
+                    selected: false,
+                    rotation: d.rotation + newRotation,
+                  }
+                }
+                newRotation += 90
+              }
+              return { ...d, selected: false, r: undefined, c: undefined }
+            }
+
+            return { ...d, selected: false }
+          }),
+        )
+      }
+
+      setDominoes((prev) => prev.map((d) => ({ ...d, selected: false })))
     }
 
     window.addEventListener('pointerup', cb)
@@ -259,13 +307,13 @@ export const Game = () => {
                     dragState && dragState.dominoId !== uiDomino.id
                       ? 'none'
                       : 'all',
-                  ...(uiDomino.selected
-                    ? {
-                        transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
-                        // transformOrigin: `50% 50%`,
-                        translate: 0,
-                      }
-                    : {}),
+                  // ...(uiDomino.selected
+                  //   ? {
+                  //       transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
+                  //       // transformOrigin: `50% 50%`,
+                  //       translate: 0,
+                  //     }
+                  //   : {}),
                 }}
               />
             ) : null
@@ -346,7 +394,7 @@ export const Game = () => {
             opacity: 0.8,
             transformOrigin: 'top left',
             translate: getTranslateFromRotation(draggedDomino.rotation),
-            scale: 1.2,
+            // scale: 1.2,
             // transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
             // translate: isVertical(dragState.rotation) ? `0 -50%` : `50% 0%`,
             // scale: 1,
