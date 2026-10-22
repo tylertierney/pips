@@ -33,6 +33,11 @@ export const Regions = ({
           const regionCells = new Set(indices.map((coords) => String(coords)))
           const color = colors[i % colors.length]
 
+          const maxCol = Math.max(...indices.map(([_, c]) => c))
+          const maxRow = Math.max(
+            ...indices.filter(([_, c]) => c === maxCol).map(([r]) => r),
+          )
+
           return (
             <React.Fragment key={i}>
               {indices.map(([r, c]) => {
@@ -45,9 +50,7 @@ export const Regions = ({
                   left: c > 0 && regionCells.has(String([r, c - 1])),
                 }
 
-                const isBottomRightCell =
-                  r === Math.max(...indices.map(([r]) => r)) &&
-                  c === Math.max(...indices.map(([_, c]) => c))
+                const isTaggedCell = r === maxRow && c === maxCol
 
                 return (
                   <div
@@ -125,7 +128,7 @@ export const Regions = ({
                           : {}),
                       }}
                     >
-                      {isBottomRightCell && (
+                      {isTaggedCell && (
                         <div
                           style={{
                             position: 'absolute',

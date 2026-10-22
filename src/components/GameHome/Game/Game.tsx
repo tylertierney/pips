@@ -1,20 +1,100 @@
 import styles from './Game.module.scss'
 import {
-  clickedOnDomino,
+  clickedDomino,
   cn,
   convertGameDominoesToUiDominoes,
   getTranslateFromRotation,
-  isPlacedInBounds,
+  isSolved,
   isValidPlacement,
-  isVertical,
   traverseStackToFindCell,
 } from '../../../utils/utils'
-import type { Difficulty, IDomino, Today } from '../../../models/models'
-import { useEffect, useState, type PointerEvent } from 'react'
+import {
+  type Difficulty,
+  type IGame,
+  type IDomino,
+  type Today,
+  LOCAL_STORAGE_PREFIX,
+} from '../../../models/models'
+import {
+  useEffect,
+  useState,
+  type Dispatch,
+  type PointerEvent,
+  type SetStateAction,
+} from 'react'
 import { Domino } from '../../Domino/Domino'
 import { Regions } from '../../Regions/Regions'
 import { useOutletContext, useParams } from 'react-router-dom'
 import { useGridBuilder } from '../../../hooks/useGridBuilder'
+
+const resetInvalidDominoes = (
+  setDominoes: Dispatch<SetStateAction<UiDomino[]>>,
+  game: IGame,
+  width: number,
+  height: number,
+  clickedOnDominoId: number | undefined,
+) => {
+  setDominoes((arr) =>
+    arr.map((d) => {
+      if (clickedOnDominoId === d.id) return d
+
+      const isPlaced = d.r !== undefined || d.c !== undefined
+      const isSelected = Boolean(d.selected)
+
+      const validPlacementParams: Parameters<typeof isValidPlacement>[0] = {
+        targetR: d.r as number,
+        targetC: d.c as number,
+        dominoes: arr,
+        dominoId: d.id,
+        game,
+        width,
+        height,
+        rotation: d.rotation,
+      }
+
+      if (isPlaced && isSelected && !isValidPlacement(validPlacementParams)) {
+        let newRotation = 90
+        while (newRotation < 360) {
+          if (
+            isValidPlacement({
+              ...validPlacementParams,
+              rotation: d.rotation + newRotation,
+            })
+          ) {
+            return {
+              ...d,
+              selected: false,
+              rotation: d.rotation + newRotation,
+            }
+          }
+          newRotation += 90
+        }
+        return { ...d, selected: false, r: undefined, c: undefined }
+      }
+
+      return d
+    }),
+  )
+}
+
+const getDominoesFromLocalStorage = (
+  today: Today,
+  game: IGame,
+  difficulty: Difficulty,
+) => {
+  const fromLocalStorage = localStorage.getItem(
+    LOCAL_STORAGE_PREFIX + today.printDate,
+  )
+
+  if (fromLocalStorage) {
+    const parsed = JSON.parse(fromLocalStorage)
+    if (parsed && parsed[difficulty]?.dominoes) {
+      return parsed[difficulty].dominoes
+    }
+  }
+
+  return convertGameDominoesToUiDominoes(game.dominoes)
+}
 
 export type UiDomino = {
   id: number
@@ -33,12 +113,34 @@ export const Game = () => {
   const { height, width, cellSize, cells } = useGridBuilder(game)
 
   const [dominoes, setDominoes] = useState<UiDomino[]>(
-    convertGameDominoesToUiDominoes(game.dominoes),
+    getDominoesFromLocalStorage(today, game, difficulty),
   )
 
   useEffect(() => {
-    setDominoes(convertGameDominoesToUiDominoes(game.dominoes))
+    console.log('does it run?')
+    setDominoes(getDominoesFromLocalStorage(today, game, difficulty))
   }, [game])
+
+  useEffect(() => {
+    const gameId = LOCAL_STORAGE_PREFIX + today.printDate
+    const fromLocalStorage = localStorage.getItem(gameId)
+
+    if (fromLocalStorage) {
+      const parsed = JSON.parse(fromLocalStorage)
+      localStorage.setItem(
+        gameId,
+        JSON.stringify({
+          ...parsed,
+          [difficulty]: { ...parsed[difficulty], dominoes },
+        }),
+      )
+    } else {
+      localStorage.setItem(
+        gameId,
+        JSON.stringify({ [difficulty]: { dominoes } }),
+      )
+    }
+  }, [dominoes, today, game])
 
   const placedDominoes = dominoes.filter(
     ({ r, c }) => r !== undefined && c !== undefined,
@@ -72,9 +174,7 @@ export const Game = () => {
 
   useEffect(() => {
     const cb = (e: MouseEvent) => {
-      const clickedDomino = clickedOnDomino(e)
-
-      console.log(clickedDomino)
+      const clickedOnDomino = clickedDomino(e)
 
       if (dragState) {
         const coords = [
@@ -141,53 +241,8 @@ export const Game = () => {
 
       setDragState(null)
       setIsHoldingDownMouse(false)
-      if (!clickedDomino) {
-        setDominoes((arr) =>
-          arr.map((d) => {
-            const isPlaced = d.r !== undefined || d.c !== undefined
-            const isSelected = Boolean(d.selected)
 
-            const validPlacementParams: Parameters<typeof isValidPlacement>[0] =
-              {
-                targetR: d.r as number,
-                targetC: d.c as number,
-                dominoes: arr,
-                dominoId: d.id,
-                game,
-                width,
-                height,
-                rotation: d.rotation,
-              }
-
-            if (
-              isPlaced &&
-              isSelected &&
-              !isValidPlacement(validPlacementParams)
-            ) {
-              console.log('resetting domino state')
-              let newRotation = 90
-              while (newRotation < 360) {
-                if (
-                  isValidPlacement({
-                    ...validPlacementParams,
-                    rotation: d.rotation + newRotation,
-                  })
-                ) {
-                  return {
-                    ...d,
-                    selected: false,
-                    rotation: d.rotation + newRotation,
-                  }
-                }
-                newRotation += 90
-              }
-              return { ...d, selected: false, r: undefined, c: undefined }
-            }
-
-            return { ...d, selected: false }
-          }),
-        )
-      }
+      resetInvalidDominoes(setDominoes, game, width, height, clickedOnDomino)
 
       setDominoes((prev) => prev.map((d) => ({ ...d, selected: false })))
     }
@@ -244,6 +299,8 @@ export const Game = () => {
     )
   }
 
+  const solved = isSolved(game, dominoes)
+
   return (
     <div className='flex flex-col justify-center items-center grow px-2'>
       <div className={cn('relative my-16', styles.container)}>
@@ -272,6 +329,7 @@ export const Game = () => {
                 style={{ ...style }}
               >
                 {!isBackgroundCell && cell.cornerSvgs.map((svg) => svg)}
+                {/* <pre className='text-[10px]'>{String(coords)}</pre> */}
               </div>
             )
           })}
@@ -296,6 +354,7 @@ export const Game = () => {
                     ? (e) => onPointerMove(e, uiDomino)
                     : undefined
                 }
+                disabled={solved}
                 style={{
                   top: r * cellSize + 'px',
                   left: c * cellSize + 'px',
@@ -307,13 +366,6 @@ export const Game = () => {
                     dragState && dragState.dominoId !== uiDomino.id
                       ? 'none'
                       : 'all',
-                  // ...(uiDomino.selected
-                  //   ? {
-                  //       transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
-                  //       // transformOrigin: `50% 50%`,
-                  //       translate: 0,
-                  //     }
-                  //   : {}),
                 }}
               />
             ) : null
@@ -354,6 +406,7 @@ export const Game = () => {
                     cellSize={cellSize}
                     domino={uiDomino.domino}
                     className='p-0'
+                    disabled={solved}
                     style={{
                       height: cellSize + 'px',
                       width: 2 * cellSize + 'px',
@@ -385,6 +438,7 @@ export const Game = () => {
           domino={draggedDomino.domino}
           cellSize={cellSize}
           className='touch-none select-none'
+          disabled={solved}
           style={{
             position: 'fixed',
             top: dragState.top - dragState.offsetY,
@@ -394,10 +448,6 @@ export const Game = () => {
             opacity: 0.8,
             transformOrigin: 'top left',
             translate: getTranslateFromRotation(draggedDomino.rotation),
-            // scale: 1.2,
-            // transformOrigin: `${0.5 * cellSize}px ${0.5 * cellSize}px`,
-            // translate: isVertical(dragState.rotation) ? `0 -50%` : `50% 0%`,
-            // scale: 1,
             zIndex: 1,
           }}
         />

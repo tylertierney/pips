@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import type { CSSProperties } from 'react'
 import { twMerge } from 'tailwind-merge'
 import type { UiDomino } from '../components/GameHome/Game/Game'
-import type { Coords, Game, IDomino } from '../models/models'
+import type { Coords, IDomino, IGame } from '../models/models'
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs))
@@ -36,12 +36,14 @@ export const isVertical = (rotation: number): boolean => {
   return true
 }
 
-export const clickedOnDomino = (e: MouseEvent): boolean => {
+export const clickedDomino = (e: MouseEvent): number | undefined => {
   const elementStack = document.elementsFromPoint(e.clientX, e.clientY)
 
-  const found = elementStack.find((el) => el.id.includes('domino'))
+  const id = elementStack.find((el) => el.id.includes('domino'))?.id
+  if (!id) return undefined
+  const dominoId = id.replace('domino-', '')
 
-  return Boolean(found)
+  return parseInt(dominoId, 10)
 }
 
 export const traverseStackToFindCell = (
@@ -83,7 +85,7 @@ export const isValidPlacement = ({
   rotation: number
   height: number
   width: number
-  game: Game
+  game: IGame
   dominoes: UiDomino[]
 }): boolean => {
   const vertical = isVertical(rotation)
@@ -128,7 +130,7 @@ export const isPlacedInBounds = ({
   targetC2: number
   height: number
   width: number
-  game: Game
+  game: IGame
 }) => {
   const firstSquareOutOfBounds =
     targetR < 0 || targetR >= height || targetC < 0 || targetC >= width
@@ -197,6 +199,81 @@ export const isNotColldingWithOtherDominoes = ({
   return true
 }
 
-// export const deriveGridStateFromPlacedDominoes = (game: Game) => {
-//   const grid = Arr
-// }
+export const deriveIndicesFromRotatedDomino = (
+  uiDomino: UiDomino,
+): [Coords, Coords] | null => {
+  const { r, c, rotation: _rotation } = uiDomino
+  const rotation = normalizeRotation(_rotation)
+
+  if (r === undefined || c === undefined) return null
+
+  if (rotation === 360 || rotation === 0) {
+    return [
+      [r, c],
+      [r, c + 1],
+    ]
+  }
+
+  if (rotation === 90) {
+    return [
+      [r, c],
+      [r + 1, c],
+    ]
+  }
+
+  if (rotation === 180) {
+    return [
+      [r, c + 1],
+      [r, c],
+    ]
+  }
+
+  if (rotation === 270) {
+    return [
+      [r + 1, c],
+      [r, c],
+    ]
+  }
+
+  return null
+}
+
+export const deriveGridStateFromPlacedDominoes = (
+  game: IGame,
+  width: number,
+  height: number,
+) => {
+  return Array.from({ length: height }).map(() => Array.from({ length: width }))
+}
+
+export const isSolved = (game: IGame, uiDominoes: UiDomino[]) => {
+  const dominoes = uiDominoes.toSorted((a, b) => a.id - b.id)
+
+  let result = true
+  dominoes.forEach((d) => {
+    const normalized = deriveIndicesFromRotatedDomino(d)
+    if (!normalized) {
+      result = false
+      return
+    }
+
+    const solved = game.solution[d.id]
+    if (
+      solved[0][0] !== normalized[0][0] ||
+      solved[0][1] !== normalized[0][1] ||
+      solved[1][0] !== normalized[1][0] ||
+      solved[1][1] !== normalized[1][1]
+    ) {
+      result = false
+    }
+  })
+
+  return result
+  // game.solution.forEach()
+}
+
+export const constructDateFromString = (str: string): Date => {
+  const [year, month, day] = str.split('-').map(Number)
+  const correctDate = new Date(year, month - 1, day)
+  return correctDate
+}

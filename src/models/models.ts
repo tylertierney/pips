@@ -10,13 +10,11 @@ export type Region = {
   target?: number
 }
 
-export type Game = {
+export type IGame = {
   backendId: string
-
   constructors: string
   dominoes: IDomino[]
   id: number
-
   regions: Region[]
   solution: Array<[Coords, Coords]>
 }
@@ -24,10 +22,12 @@ export type Game = {
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
 export type Today = {
-  easy: Game
-  medium: Game
-  hard: Game
+  easy: IGame
+  medium: IGame
+  hard: IGame
   editor: string
   printDate: string
   index: number
 }
+
+export const LOCAL_STORAGE_PREFIX = 'pips-state-'

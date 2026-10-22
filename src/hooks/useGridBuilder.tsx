@@ -5,10 +5,10 @@ import {
   TopLeftCorner,
   TopRightCorner,
 } from '../components/CornerSvg/CornerSvg'
-import type { Game, Region } from '../models/models'
+import type { IGame, Region } from '../models/models'
 import { useCellSize } from './useCellSize'
 
-export const useGridBuilder = (game: Game) => {
+export const useGridBuilder = (game: IGame) => {
   const { regions } = game
 
   const height =

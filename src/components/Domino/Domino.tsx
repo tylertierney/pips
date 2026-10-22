@@ -1,5 +1,5 @@
 import styles from './Domino.module.scss'
-import type { ComponentProps, ReactNode } from 'react'
+import type { ComponentProps } from 'react'
 import type { IDomino } from '../../models/models'
 import { cn } from '../../utils/utils'
 
@@ -10,6 +10,7 @@ type DominoProps = {
   rotation?: number // 0 90 180 270
   selected?: boolean
   idPrefix?: string
+  disabled?: boolean
 }
 
 export const Domino = ({
@@ -21,6 +22,10 @@ export const Domino = ({
   className = '',
   selected = false,
   idPrefix,
+  disabled = false,
+  onPointerDown,
+  onPointerMove,
+  onClick,
   ...rest
 }: DominoProps & Omit<ComponentProps<'div'>, 'id'>) => {
   return (
@@ -29,15 +34,16 @@ export const Domino = ({
       className={cn(
         styles.domino,
         'flex items-center justify-center p-0.5 cursor-pointer',
-        // selected && 'scale-110',
         className,
       )}
       style={{
         height: cellSize + 'px',
         width: cellSize * 2 + 'px',
-        // scale: selected ? 1.2 : 1,
         ...style,
       }}
+      onClick={disabled ? undefined : onClick}
+      onPointerDown={disabled ? undefined : onPointerDown}
+      onPointerMove={disabled ? undefined : onPointerMove}
       {...rest}
     >
       <div

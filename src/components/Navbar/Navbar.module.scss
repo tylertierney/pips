@@ -1,0 +1,132 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid
+    color-mix(in hsl, var(--color-primary) 25%, transparent);
+
+  .logo {
+    font-size: 1.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    text-decoration: none;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-primary);
+  }
+
+  .icons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .button {
+      background: none;
+      border: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      color: var(--color-primary);
+      fill: var(--color-primary);
+      stroke: var(--color-primary);
+    }
+  }
+}
+
+.backdrop {
+  position: fixed;
+  width: 100vw;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.515);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+  box-sizing: content-box;
+
+  &:open {
+    display: flex;
+  }
+
+  &:hidden {
+    display: none;
+  }
+
+  .modal {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: var(--color-primary);
+    max-height: 90dvh;
+    overflow-y: scroll;
+    max-width: 500px;
+
+    .modalHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      .modalTitle {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+
+      .closeIcon {
+        padding: 0.6rem;
+        width: 1.2rem;
+        height: 1.2rem;
+        fill: var(--color-primary);
+        stroke: var(--color-primary);
+        border-radius: 100%;
+        cursor: pointer;
+        box-sizing: content-box;
+
+        &:hover {
+          background-color: color-mix(
+            in hsl,
+            var(--color-primary) 15%,
+            var(--bg-color)
+          );
+        }
+      }
+    }
+
+    .modalBody {
+      display: flex;
+      flex-direction: column;
+
+      .video {
+        align-self: center;
+        margin-bottom: 2rem;
+      }
+
+      .h2 {
+        font-size: 1.1rem;
+      }
+
+      .ul {
+        margin: 0;
+        padding-left: 1.5rem;
+
+        .li {
+          margin-bottom: 1rem;
+        }
+      }
+
+      .blue {
+        color: var(--readable-theme-word);
+      }
+
+      .yellow {
+        color: var(--readable-spangram);
+      }
+    }
+  }
+}
