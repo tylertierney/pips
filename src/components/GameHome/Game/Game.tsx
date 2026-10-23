@@ -324,8 +324,8 @@ export const Game = () => {
         })}
       </div>
 
-      <div className='flex flex-col justify-center items-center grow px-2'>
-        <div className={cn('relative my-16', styles.container)}>
+      <div className='flex flex-col justify-center items-center grow px-2 lg:flex-row lg:gap-16'>
+        <div className={cn('relative my-16 lg:mr-14', styles.container)}>
           <div
             className='select-none'
             style={{
@@ -400,12 +400,20 @@ export const Game = () => {
             />
           </div>
         </div>
-        <div className='h-0.5 w-full bg-gray-200'></div>
+        <div
+          className='h-px w-full lg:h-auto lg:w-px self-stretch'
+          style={{
+            backgroundColor:
+              'color-mix(in hsl, var(--color-primary) 25%, transparent)',
+          }}
+        ></div>
         <div
           className={cn(
             'flex gap-3 px-6 justify-center flex-wrap py-16 select-none',
+            'lg:px-0',
             styles.tray,
           )}
+          style={{ maxWidth: 2 * width * cellSize + 'px' }}
           id='tray'
         >
           {dominoes.map((uiDomino, idx) => {

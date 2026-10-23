@@ -37,7 +37,6 @@ const router = createBrowserRouter([
             throw redirect('/')
           }
           return today
-          // return { ...today, index: parseInt(params.printDate ?? '0', 10) || 0 }
         },
         children: [
           {
