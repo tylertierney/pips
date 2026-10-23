@@ -13,6 +13,11 @@
       height: 1.2rem;
       padding: 0.25rem 0;
 
+      &.id {
+        width: 48px;
+        min-width: 48px;
+      }
+
       &.result {
         width: 100px;
         min-width: 100px;

@@ -7,6 +7,14 @@
 body {
   --bg-color: rgb(31, 35, 46);
   --color-primary: white;
+  --color-primary-inverse: rgb(
+    from var(--color-primary) calc(255 - r) calc(255 - g) calc(255 - b)
+  );
+
+  --bg-cell: #676767;
+  --bg-cell-foreground: #5b5b5b;
+
+  --color-green: #9fe7a7;
 
   --stroke-pips-region-blue: #003674;
   --bg-pips-region-blue: #1240764d;
@@ -29,6 +37,11 @@ body {
   &.light-theme {
     --bg-color: white;
     --color-primary: black;
+
+    --bg-cell: #dbc2b9;
+    --bg-cell-foreground: #e1cbc5;
+
+    --color-green: #51a65b;
   }
 }
 
@@ -46,8 +59,4 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-}
-
-@utility rotate-270 {
-  rotate: 270deg;
 }

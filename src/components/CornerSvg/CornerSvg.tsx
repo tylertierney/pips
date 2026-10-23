@@ -9,7 +9,10 @@ export const TopRightCorner = ({ className, style }: ComponentProps<'svg'>) => {
       className={className}
       style={style}
     >
-      <path style={{ fill: '#decbc4' }} d='M100,0v14c-1-14-14-14-14-14' />
+      <path
+        style={{ fill: 'var(--bg-cell)' }}
+        d='M100,0v14c-1-14-14-14-14-14'
+      />
     </svg>
   )
 }
@@ -23,7 +26,7 @@ export const TopLeftCorner = ({ className, style }: ComponentProps<'svg'>) => {
       className={className}
       style={style}
     >
-      <path style={{ fill: '#decbc4' }} d='M0,0h14C0,1,0,14,0,14' />
+      <path style={{ fill: 'var(--bg-cell)' }} d='M0,0h14C0,1,0,14,0,14' />
     </svg>
   )
 }
@@ -40,7 +43,10 @@ export const BottomRightCorner = ({
       className={className}
       style={style}
     >
-      <path style={{ fill: '#decbc4' }} d='M100,100h-14c14-1,14-14,14-14' />
+      <path
+        style={{ fill: 'var(--bg-cell)' }}
+        d='M100,100h-14c14-1,14-14,14-14'
+      />
     </svg>
   )
 }
@@ -57,7 +63,10 @@ export const BottomLeftCorner = ({
       className={className}
       style={style}
     >
-      <path style={{ fill: '#decbc4' }} d='M0,100v-14c1,14,14,14,14,14' />
+      <path
+        style={{ fill: 'var(--bg-cell)' }}
+        d='M0,100v-14c1,14,14,14,14,14'
+      />
     </svg>
   )
 }

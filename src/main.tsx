@@ -26,11 +26,11 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        path: 'games/:printDate',
+        path: 'games/:index',
         element: <GameHome />,
         loader: ({ params }) => {
           const today = games.find(
-            ({ printDate }) => printDate === params.printDate,
+            ({ index }) => index === parseInt(params.index || '1', 10),
           )
 
           if (!today) {
@@ -40,6 +40,10 @@ const router = createBrowserRouter([
           // return { ...today, index: parseInt(params.printDate ?? '0', 10) || 0 }
         },
         children: [
+          {
+            index: true,
+            element: <Navigate to='easy' replace />,
+          },
           {
             path: ':difficulty',
             element: <Game />,

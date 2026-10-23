@@ -71,12 +71,13 @@ const getNewGame = async (date: Date) => {
 // getNewGame(new Date())
 
 const getAllGames = async () => {
-  let start = new Date('2026-1-1')
+  let start = new Date('2026-5-1')
   // let end = new Date('2026-10-24')
-  let end = new Date('2026-1-1')
+  let end = new Date('2026-8-1')
   let gamesArr2: Today[] = []
 
   while (start < end) {
+    console.log(start)
     try {
       const res = await fetch(
         `https://www.nytimes.com/svc/pips/v1/${formatDate(start)}.json`,
@@ -87,10 +88,21 @@ const getAllGames = async () => {
     } catch {}
 
     start = addDays(start, 1)
-    console.log(start)
   }
 
-  fs.writeFileSync('games.json', JSON.stringify(gamesArr2, null, 2))
+  const allGames = [...gamesArr, ...gamesArr2]
+    .toSorted((a, b) => b.printDate.localeCompare(a.printDate))
+    .map((g, index, arr) => ({
+      ...g,
+      index: arr.length - index,
+    }))
+
+  fs.writeFileSync('games.json', JSON.stringify(allGames, null, 2))
 }
 
 getAllGames()
+
+// const res = gamesArr.map((_, i) => ({ ..._, index: gamesArr.length - i }))
+
+// console.log(res[0], res[res.length - 1])
+// fs.writeFileSync('games.json', JSON.stringify(res, null, 2))

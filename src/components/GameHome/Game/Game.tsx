@@ -24,7 +24,7 @@ import {
 } from 'react'
 import { Domino } from '../../Domino/Domino'
 import { Regions } from '../../Regions/Regions'
-import { useOutletContext, useParams } from 'react-router-dom'
+import { Link, useOutletContext, useParams } from 'react-router-dom'
 import { useGridBuilder } from '../../../hooks/useGridBuilder'
 
 const resetInvalidDominoes = (
@@ -117,7 +117,6 @@ export const Game = () => {
   )
 
   useEffect(() => {
-    console.log('does it run?')
     setDominoes(getDominoesFromLocalStorage(today, game, difficulty))
   }, [game])
 
@@ -301,190 +300,189 @@ export const Game = () => {
 
   const solved = isSolved(game, dominoes)
 
+  const reset = () => {
+    setDominoes(convertGameDominoesToUiDominoes(game.dominoes))
+  }
+
   return (
-    <div className='flex flex-col justify-center items-center grow px-2'>
-      <div className={cn('relative my-16', styles.container)}>
-        <div
-          className='select-none'
-          style={{
-            display: 'grid',
-            gridTemplateRows: `repeat(${height}, ${cellSize}px)`,
-            gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
-            zIndex: 0,
-          }}
-        >
-          {cells.map((cell) => {
-            const { r, c, isBackgroundCell, ...style } = cell
-            const coords = [r, c]
-
-            return (
-              <div
-                key={r * width + c}
-                data-coords={JSON.stringify(coords)}
-                className={cn(
-                  'flex justify-center items-center aspect-square z-0 overflow-hidden select-none',
-                  styles.cell,
-                  isBackgroundCell && styles.backgroundCell,
-                )}
-                style={{ ...style }}
-              >
-                {!isBackgroundCell && cell.cornerSvgs.map((svg) => svg)}
-                {/* <pre className='text-[10px]'>{String(coords)}</pre> */}
-              </div>
-            )
-          })}
-
-          {placedDominoes.map((uiDomino) => {
-            const { r: _r, c: _c, id, domino, rotation } = uiDomino
-            const r = _r as number
-            const c = _c as number
-            return dragState?.dominoId !== uiDomino.id ? (
-              <Domino
-                selected={uiDomino.selected}
-                id={id}
-                key={id}
-                domino={domino}
-                rotation={rotation}
-                className='absolute'
-                cellSize={cellSize}
-                onClick={() => onClick(uiDomino)}
-                onPointerDown={onPointerDown}
-                onPointerMove={
-                  !dragState?.dominoId
-                    ? (e) => onPointerMove(e, uiDomino)
-                    : undefined
-                }
-                disabled={solved}
-                style={{
-                  top: r * cellSize + 'px',
-                  left: c * cellSize + 'px',
-                  rotate: (rotation ?? 0) + 'deg',
-                  transformOrigin: 'top left',
-                  translate: getTranslateFromRotation(rotation),
-                  touchAction: 'none',
-                  pointerEvents:
-                    dragState && dragState.dominoId !== uiDomino.id
-                      ? 'none'
-                      : 'all',
-                }}
-              />
-            ) : null
-          })}
-          <Regions
-            regions={game.regions}
-            cellSize={cellSize}
-            gridHeight={height}
-            gridWidth={width}
-          />
-        </div>
-      </div>
-      <div className='h-0.5 w-full bg-gray-200'></div>
-      <div
-        className='flex gap-3 px-6 justify-center flex-wrap py-16 select-none'
-        id='tray'
-      >
-        {dominoes.map((uiDomino, idx) => {
+    <div className='flex flex-col'>
+      <div className={cn('flex', styles.tabs)}>
+        {['Easy', 'Medium', 'Hard'].map((diff) => {
           return (
-            <div
-              className='flex items-center rounded-md relative select-none'
-              style={{
-                backgroundColor: '#dbc2b9',
-                height: 0.9 * cellSize + 'px',
-                width: 0.9 * (2 * cellSize) + 'px',
-              }}
-              key={idx}
+            <Link
+              key={diff}
+              to={'../' + diff.toLowerCase()}
+              className={cn(
+                styles.tab,
+                difficulty === diff.toLowerCase() && styles.active,
+              )}
+              replace
             >
-              {!placedDominoes.find(({ id }) => id === idx) &&
-                dragState?.dominoId !== uiDomino.id && (
-                  <Domino
-                    selected={uiDomino.selected}
-                    id={uiDomino.id}
-                    idPrefix='tray'
-                    onPointerMove={(e) => onPointerMove(e, uiDomino)}
-                    onPointerDown={onPointerDown}
-                    onClick={() => onClick(uiDomino)}
-                    cellSize={cellSize}
-                    domino={uiDomino.domino}
-                    className='p-0'
-                    disabled={solved}
-                    style={{
-                      height: cellSize + 'px',
-                      width: 2 * cellSize + 'px',
-                      flexShrink: 0,
-                      marginLeft: -1 * 0.1 * cellSize + 'px',
-                      touchAction: 'none',
-                      zIndex: 0,
-                      rotate: (uiDomino.rotation ?? 0) + 'deg',
-                      ...(uiDomino.selected
-                        ? {
-                            zIndex: 1,
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            transformOrigin: 'center',
-                            opacity: 0.8,
-                          }
-                        : {}),
-                    }}
-                  />
-                )}
-            </div>
+              {diff}
+            </Link>
           )
         })}
       </div>
-      {dragState && draggedDomino && (
-        <Domino
-          id={draggedDomino.id}
-          domino={draggedDomino.domino}
-          cellSize={cellSize}
-          className='touch-none select-none'
-          disabled={solved}
-          style={{
-            position: 'fixed',
-            top: dragState.top - dragState.offsetY,
-            left: dragState.left - dragState.offsetX,
-            transition: 'none',
-            rotate: draggedDomino.rotation + 'deg',
-            opacity: 0.8,
-            transformOrigin: 'top left',
-            translate: getTranslateFromRotation(draggedDomino.rotation),
-            zIndex: 1,
-          }}
-        />
-      )}
-      {dragState && draggedDomino && (
-        <>
-          {/* <span
-            style={{
-              position: 'fixed',
-              top: dragState.top - dragState.offsetY + 0.5 * cellSize,
-              left: dragState.left - dragState.offsetX + 0.5 * cellSize,
-              height: '6px',
-              width: '6px',
-              borderRadius: '100%',
-              background: 'red',
-              zIndex: 1,
-            }}
-          ></span> */}
-          {/* <span
-            style={{
-              position: 'fixed',
-              top: isVertical(dragState.rotation)
-                ? dragState.top - dragState.offsetY + 1.5 * cellSize
-                : dragState.top - dragState.offsetY + 0.5 * cellSize,
-              left: isVertical(dragState.rotation)
-                ? dragState.left - dragState.offsetX + 0.5 * cellSize
-                : dragState.left - dragState.offsetX + 1.5 * cellSize,
 
-              height: '6px',
-              width: '6px',
-              borderRadius: '100%',
-              background: 'red',
+      <div className='flex flex-col justify-center items-center grow px-2'>
+        <div className={cn('relative my-16', styles.container)}>
+          <div
+            className='select-none'
+            style={{
+              display: 'grid',
+              gridTemplateRows: `repeat(${height}, ${cellSize}px)`,
+              gridTemplateColumns: `repeat(${width}, ${cellSize}px)`,
+              zIndex: 0,
+            }}
+          >
+            {cells.map((cell) => {
+              const { r, c, isBackgroundCell, ...style } = cell
+              const coords = [r, c]
+
+              return (
+                <div
+                  key={r * width + c}
+                  data-coords={JSON.stringify(coords)}
+                  className={cn(
+                    'flex justify-center items-center aspect-square z-0 overflow-hidden select-none',
+                    styles.cell,
+                    isBackgroundCell && styles.backgroundCell,
+                  )}
+                  style={{ ...style }}
+                >
+                  {!isBackgroundCell && cell.cornerSvgs.map((svg) => svg)}
+                  {/* <pre className='text-[10px]'>{String(coords)}</pre> */}
+                </div>
+              )
+            })}
+
+            {placedDominoes.map((uiDomino) => {
+              const { r: _r, c: _c, id, domino, rotation } = uiDomino
+              const r = _r as number
+              const c = _c as number
+              return dragState?.dominoId !== uiDomino.id ? (
+                <Domino
+                  selected={uiDomino.selected}
+                  id={id}
+                  key={id}
+                  domino={domino}
+                  rotation={rotation}
+                  className='absolute'
+                  cellSize={cellSize}
+                  onClick={() => onClick(uiDomino)}
+                  onPointerDown={onPointerDown}
+                  onPointerMove={
+                    !dragState?.dominoId
+                      ? (e) => onPointerMove(e, uiDomino)
+                      : undefined
+                  }
+                  disabled={solved}
+                  style={{
+                    top: r * cellSize + 'px',
+                    left: c * cellSize + 'px',
+                    rotate: (rotation ?? 0) + 'deg',
+                    transformOrigin: 'top left',
+                    translate: getTranslateFromRotation(rotation),
+                    touchAction: 'none',
+                    pointerEvents:
+                      dragState && dragState.dominoId !== uiDomino.id
+                        ? 'none'
+                        : 'all',
+                  }}
+                />
+              ) : null
+            })}
+            <Regions
+              regions={game.regions}
+              cellSize={cellSize}
+              gridHeight={height}
+              gridWidth={width}
+            />
+          </div>
+        </div>
+        <div className='h-0.5 w-full bg-gray-200'></div>
+        <div
+          className={cn(
+            'flex gap-3 px-6 justify-center flex-wrap py-16 select-none',
+            styles.tray,
+          )}
+          id='tray'
+        >
+          {dominoes.map((uiDomino, idx) => {
+            return (
+              <div
+                className={cn(
+                  'flex items-center rounded-md relative select-none',
+                  styles.trayItem,
+                )}
+                style={{
+                  height: 0.9 * cellSize + 'px',
+                  width: 0.9 * (2 * cellSize) + 'px',
+                }}
+                key={idx}
+              >
+                {!placedDominoes.find(({ id }) => id === idx) &&
+                  dragState?.dominoId !== uiDomino.id && (
+                    <Domino
+                      selected={uiDomino.selected}
+                      id={uiDomino.id}
+                      idPrefix='tray'
+                      onPointerMove={(e) => onPointerMove(e, uiDomino)}
+                      onPointerDown={onPointerDown}
+                      onClick={() => onClick(uiDomino)}
+                      cellSize={cellSize}
+                      domino={uiDomino.domino}
+                      className='p-0'
+                      disabled={solved}
+                      style={{
+                        height: cellSize + 'px',
+                        width: 2 * cellSize + 'px',
+                        flexShrink: 0,
+                        marginLeft: -1 * 0.1 * cellSize + 'px',
+                        touchAction: 'none',
+                        zIndex: 0,
+                        rotate: (uiDomino.rotation ?? 0) + 'deg',
+                        ...(uiDomino.selected
+                          ? {
+                              zIndex: 1,
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              transformOrigin: 'center',
+                              opacity: 0.8,
+                            }
+                          : {}),
+                      }}
+                    />
+                  )}
+              </div>
+            )
+          })}
+        </div>
+        {dragState && draggedDomino && (
+          <Domino
+            id={draggedDomino.id}
+            domino={draggedDomino.domino}
+            cellSize={cellSize}
+            className='touch-none select-none'
+            disabled={solved}
+            style={{
+              position: 'fixed',
+              top: dragState.top - dragState.offsetY,
+              left: dragState.left - dragState.offsetX,
+              transition: 'none',
+              rotate: draggedDomino.rotation + 'deg',
+              opacity: 0.8,
+              transformOrigin: 'top left',
+              translate: getTranslateFromRotation(draggedDomino.rotation),
               zIndex: 1,
             }}
-          ></span> */}
-        </>
-      )}
+          />
+        )}
+      </div>
+      <button className={cn(styles.resetButton)} onClick={reset}>
+        Reset
+      </button>
     </div>
   )
 }

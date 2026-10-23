@@ -48,8 +48,9 @@ export const Domino = ({
     >
       <div
         className={cn(
-          'h-90/100 w-90/100 outline-2 outline-b-4 outline-gray-400 rounded-md flex bg-white',
+          'h-90/100 w-90/100 outline-2 outline-b-4 outline-gray-400 rounded-md flex',
           selected && 'backdrop-blur-lg opacity-90 ',
+          styles.dominoInner,
         )}
       >
         <div
@@ -80,12 +81,11 @@ type DominoSideProps = {
 export const Dot = ({ cellSize }: DominoSideProps) => {
   return (
     <div
-      //
       style={{
         height: cellSize / 6,
         width: cellSize / 6,
       }}
-      className={cn('rounded-full bg-black')}
+      className={cn('rounded-full', styles.dot)}
     />
   )
 }
