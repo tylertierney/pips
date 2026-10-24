@@ -1,6 +1,10 @@
 import styles from './Header.module.scss'
-import type { Today } from '../../models/models'
-import { cn, constructDateFromString } from '../../utils/utils'
+import {
+  LOCAL_STORAGE_PREFIX,
+  type Difficulty,
+  type Today,
+} from '../../models/models'
+import { cn, constructDateFromString, isSolved } from '../../utils/utils'
 import { Link } from 'react-router-dom'
 import gamesArr from '../../../games.json'
 
@@ -11,11 +15,27 @@ type HeaderProps = {
 }
 
 export const Header = ({ today }: HeaderProps) => {
+  const fromLocalStorage = localStorage.getItem(
+    LOCAL_STORAGE_PREFIX + today.printDate,
+  )
+
+  let result = 0
+  if (fromLocalStorage) {
+    const parsed = JSON.parse(fromLocalStorage)
+    const difficulties: Difficulty[] = ['easy', 'medium', 'hard']
+    for (const difficulty of difficulties) {
+      if (!parsed[difficulty]) continue
+      if (isSolved(today[difficulty], parsed[difficulty]?.dominoes)) {
+        result++
+      }
+    }
+  }
+
   return (
     <div className={cn(styles.header)}>
       <div className={styles.dateAndId}>
         <span>#{today.index}</span>
-        <h1 className={styles.date}>
+        <h1 className={cn(styles.date)}>
           <b>
             {constructDateFromString(today.printDate).toLocaleDateString(
               'en-us',
@@ -26,6 +46,14 @@ export const Header = ({ today }: HeaderProps) => {
               },
             )}
           </b>
+          {result > 0 && (
+            <span>
+              &nbsp;
+              {Array(result)
+                .fill(null)
+                .map(() => '⭐️')}
+            </span>
+          )}
         </h1>
       </div>
       <div className={styles.gameLinks}>

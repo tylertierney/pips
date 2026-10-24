@@ -46,10 +46,6 @@ export const Home = () => {
               }
             }
 
-            if (today.index === 119) {
-              console.log(result)
-            }
-
             return (
               <tr key={i} className={styles.tr}>
                 <td className={cn(styles.td, styles.id)}>{today.index}</td>

@@ -267,6 +267,7 @@ export const deriveGridStateFromPlacedDominoes = (
     if (!res) continue
     const [coords1, coords2] = res
     if (grid[coords1[0]] === undefined) {
+      console.log(coords1)
       console.log(grid)
     }
     grid[coords1[0]][coords1[1]] = uiDomino.domino[0]
