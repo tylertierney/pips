@@ -1,4 +1,19 @@
-import styles from './Game.module.scss'
+import {
+  useEffect,
+  useState,
+  type Dispatch,
+  type PointerEvent,
+  type SetStateAction,
+} from 'react'
+import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { useGridBuilder } from '../../../hooks/useGridBuilder'
+import {
+  LOCAL_STORAGE_PREFIX,
+  type Difficulty,
+  type IDomino,
+  type IGame,
+  type Today,
+} from '../../../models/models'
 import {
   clickedDomino,
   cn,
@@ -8,24 +23,9 @@ import {
   isValidPlacement,
   traverseStackToFindCell,
 } from '../../../utils/utils'
-import {
-  type Difficulty,
-  type IGame,
-  type IDomino,
-  type Today,
-  LOCAL_STORAGE_PREFIX,
-} from '../../../models/models'
-import {
-  useEffect,
-  useState,
-  type Dispatch,
-  type PointerEvent,
-  type SetStateAction,
-} from 'react'
 import { Domino } from '../../Domino/Domino'
 import { Regions } from '../../Regions/Regions'
-import { Link, useOutletContext, useParams } from 'react-router-dom'
-import { useGridBuilder } from '../../../hooks/useGridBuilder'
+import styles from './Game.module.scss'
 
 const resetInvalidDominoes = (
   setDominoes: Dispatch<SetStateAction<UiDomino[]>>,

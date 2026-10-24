@@ -7,17 +7,12 @@ import {
 } from '../components/CornerSvg/CornerSvg'
 import type { IGame, Region } from '../models/models'
 import { useCellSize } from './useCellSize'
+import { getGridDimensions } from '../utils/utils'
 
 export const useGridBuilder = (game: IGame) => {
   const { regions } = game
 
-  const height =
-    Math.max(...regions.flatMap(({ indices }) => indices.map(([row]) => row))) +
-    1
-  const width =
-    Math.max(
-      ...regions.flatMap(({ indices }) => indices.map(([_, col]) => col)),
-    ) + 1
+  const { width, height } = getGridDimensions(game)
 
   const cellSize = useCellSize(width)
 

@@ -3,7 +3,20 @@ import clsx from 'clsx'
 import type { CSSProperties } from 'react'
 import { twMerge } from 'tailwind-merge'
 import type { UiDomino } from '../components/GameHome/Game/Game'
-import type { Coords, IDomino, IGame } from '../models/models'
+import type { Coords, IDomino, IGame, Region } from '../models/models'
+
+export const getGridDimensions = ({
+  regions,
+}: IGame): { width: number; height: number } => {
+  const height =
+    Math.max(...regions.flatMap(({ indices }) => indices.map(([row]) => row))) +
+    1
+  const width =
+    Math.max(
+      ...regions.flatMap(({ indices }) => indices.map(([_, col]) => col)),
+    ) + 1
+  return { width, height }
+}
 
 export const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs))
@@ -242,34 +255,93 @@ export const deriveGridStateFromPlacedDominoes = (
   game: IGame,
   width: number,
   height: number,
+  dominoes: UiDomino[],
 ) => {
-  return Array.from({ length: height }).map(() => Array.from({ length: width }))
-}
+  const grid: Array<Array<number | null | undefined>> = Array.from({
+    length: height,
+  }).map(() => Array.from({ length: width }, () => null))
 
-export const isSolved = (game: IGame, uiDominoes: UiDomino[]) => {
-  const dominoes = uiDominoes.toSorted((a, b) => a.id - b.id)
-
-  let result = true
-  dominoes.forEach((d) => {
-    const normalized = deriveIndicesFromRotatedDomino(d)
-    if (!normalized) {
-      result = false
-      return
+  for (const uiDomino of dominoes) {
+    if (uiDomino.r === undefined || uiDomino.c === undefined) continue
+    const res = deriveIndicesFromRotatedDomino(uiDomino)
+    if (!res) continue
+    const [coords1, coords2] = res
+    if (grid[coords1[0]] === undefined) {
+      console.log(grid)
     }
+    grid[coords1[0]][coords1[1]] = uiDomino.domino[0]
+    grid[coords2[0]][coords2[1]] = uiDomino.domino[1]
+  }
 
-    const solved = game.solution[d.id]
-    if (
-      solved[0][0] !== normalized[0][0] ||
-      solved[0][1] !== normalized[0][1] ||
-      solved[1][0] !== normalized[1][0] ||
-      solved[1][1] !== normalized[1][1]
-    ) {
-      result = false
-    }
+  const validGridSpaces = new Set(
+    game.regions
+      .map(({ indices }) => indices)
+      .flat()
+      .map((coords) => String(coords)),
+  )
+
+  grid.forEach((_, r) => {
+    _.forEach((_, c) => {
+      if (!validGridSpaces.has(String([r, c]))) {
+        grid[r][c] = undefined
+      }
+    })
   })
 
-  return result
-  // game.solution.forEach()
+  return grid
+}
+
+export const isSolved = (game: IGame, dominoes: UiDomino[]) => {
+  const { width, height } = getGridDimensions(game)
+
+  if (
+    dominoes.filter(({ r, c }) => r === undefined || c === undefined).length
+  ) {
+    return false
+  }
+
+  const _grid = deriveGridStateFromPlacedDominoes(game, width, height, dominoes)
+
+  if (_grid.flat().filter((v) => v === null).length) return false
+
+  const grid = _grid as number[][]
+
+  for (const region of game.regions) {
+    const values = region.indices.map(([r, c]) => grid[r][c])
+    if (!isRegionSatisfied(region, values)) return false
+  }
+
+  return true
+}
+
+export const isRegionSatisfied = (region: Region, values: number[]) => {
+  if (values.length !== region.indices.length) return false
+  if (values.filter((v) => v === null || v === undefined).length) return false
+
+  const sum = values.reduce((acc, curr) => acc + curr, 0)
+  const uniqueValues = new Set(values)
+
+  if (region.type === 'equals') {
+    if (uniqueValues.size > 1) return false
+  }
+
+  if (region.type === 'greater') {
+    if (sum <= (region.target as number)) return false
+  }
+
+  if (region.type === 'less') {
+    if (sum >= (region.target as number)) return false
+  }
+
+  if (region.type === 'sum') {
+    if (sum !== (region.target as number)) return false
+  }
+
+  if (region.type === 'unequal') {
+    if (uniqueValues.size < values.length) return false
+  }
+
+  return true
 }
 
 export const constructDateFromString = (str: string): Date => {
