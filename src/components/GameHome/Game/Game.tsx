@@ -116,9 +116,9 @@ export const Game = () => {
     getDominoesFromLocalStorage(today, game, difficulty),
   )
 
-  useEffect(() => {
-    setDominoes(getDominoesFromLocalStorage(today, game, difficulty))
-  }, [game])
+  // useEffect(() => {
+  //   setDominoes(getDominoesFromLocalStorage(today, game, difficulty))
+  // }, [game])
 
   useEffect(() => {
     const gameId = LOCAL_STORAGE_PREFIX + today.printDate
@@ -139,7 +139,7 @@ export const Game = () => {
         JSON.stringify({ [difficulty]: { dominoes } }),
       )
     }
-  }, [dominoes, today, game])
+  }, [dominoes])
 
   const placedDominoes = dominoes.filter(
     ({ r, c }) => r !== undefined && c !== undefined,

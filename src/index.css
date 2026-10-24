@@ -35,7 +35,7 @@ body {
   --stroke-pips-region-green: #4c6b00;
 
   &.light-theme {
-    --bg-color: white;
+    --bg-color: rgb(254, 254, 248);
     --color-primary: black;
 
     --bg-cell: #dbc2b9;

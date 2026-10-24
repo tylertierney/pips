@@ -1,0 +1,34 @@
+name: Daily Update
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs daily at 2:00 AM UTC
+  workflow_dispatch: # Allows manual execution
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18 # Use a stable Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run update script
+        run: npx tsx update.ts # Execute the TypeScript file
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "update games list from github action"
+          git push
+        shell: sh
