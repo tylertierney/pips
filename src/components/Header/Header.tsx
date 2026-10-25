@@ -1,12 +1,8 @@
-import styles from './Header.module.scss'
-import {
-  LOCAL_STORAGE_PREFIX,
-  type Difficulty,
-  type Today,
-} from '../../models/models'
-import { cn, constructDateFromString, isSolved } from '../../utils/utils'
 import { Link } from 'react-router-dom'
 import gamesArr from '../../../games.json'
+import { type Today } from '../../models/models'
+import { cn, constructDateFromString, getStarCount } from '../../utils/utils'
+import styles from './Header.module.scss'
 
 const games = gamesArr as Today[]
 
@@ -15,21 +11,7 @@ type HeaderProps = {
 }
 
 export const Header = ({ today }: HeaderProps) => {
-  const fromLocalStorage = localStorage.getItem(
-    LOCAL_STORAGE_PREFIX + today.printDate,
-  )
-
-  let result = 0
-  if (fromLocalStorage) {
-    const parsed = JSON.parse(fromLocalStorage)
-    const difficulties: Difficulty[] = ['easy', 'medium', 'hard']
-    for (const difficulty of difficulties) {
-      if (!parsed[difficulty]) continue
-      if (isSolved(today[difficulty], parsed[difficulty]?.dominoes)) {
-        result++
-      }
-    }
-  }
+  const starCount = getStarCount(today)
 
   return (
     <div className={cn(styles.header)}>
@@ -46,10 +28,10 @@ export const Header = ({ today }: HeaderProps) => {
               },
             )}
           </b>
-          {result > 0 && (
+          {starCount > 0 && (
             <span>
               &nbsp;
-              {Array(result)
+              {Array(starCount)
                 .fill(null)
                 .map(() => '⭐️')}
             </span>

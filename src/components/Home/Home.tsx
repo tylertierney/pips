@@ -6,7 +6,12 @@ import {
   type Today,
 } from '../../models/models'
 import styles from './Home.module.scss'
-import { cn, constructDateFromString, isSolved } from '../../utils/utils'
+import {
+  cn,
+  constructDateFromString,
+  getStarCount,
+  isSolved,
+} from '../../utils/utils'
 
 const games = gamesArr as unknown as Today[]
 
@@ -30,21 +35,7 @@ export const Home = () => {
         <tbody>
           {(games as Today[]).map((gameFromJson, i) => {
             const today = gameFromJson as unknown as Today
-            const fromLocalStorage = localStorage.getItem(
-              LOCAL_STORAGE_PREFIX + today.printDate,
-            )
-
-            let result = 0
-            if (fromLocalStorage) {
-              const parsed = JSON.parse(fromLocalStorage)
-              const difficulties: Difficulty[] = ['easy', 'medium', 'hard']
-              for (const difficulty of difficulties) {
-                if (!parsed[difficulty]) continue
-                if (isSolved(today[difficulty], parsed[difficulty]?.dominoes)) {
-                  result++
-                }
-              }
-            }
+            const starCount = getStarCount(today)
 
             return (
               <tr key={i} className={styles.tr}>
@@ -65,7 +56,7 @@ export const Home = () => {
                   </Link>
                 </td>
                 <td className={`${styles.td} ${styles.result}`}>
-                  {Array(result)
+                  {Array(starCount)
                     .fill(null)
                     .map(() => '⭐️')}
                 </td>

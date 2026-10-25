@@ -1,5 +1,9 @@
+import JSConfetti from 'js-confetti'
+const jsConfetti = new JSConfetti()
+
 import {
   useEffect,
+  useRef,
   useState,
   type Dispatch,
   type PointerEvent,
@@ -18,6 +22,7 @@ import {
   clickedDomino,
   cn,
   convertGameDominoesToUiDominoes,
+  deriveRotatedDominoFromIndices,
   getTranslateFromRotation,
   isSolved,
   isValidPlacement,
@@ -115,10 +120,6 @@ export const Game = () => {
   const [dominoes, setDominoes] = useState<UiDomino[]>(
     getDominoesFromLocalStorage(today, game, difficulty),
   )
-
-  // useEffect(() => {
-  //   setDominoes(getDominoesFromLocalStorage(today, game, difficulty))
-  // }, [game])
 
   useEffect(() => {
     const gameId = LOCAL_STORAGE_PREFIX + today.printDate
@@ -300,8 +301,18 @@ export const Game = () => {
 
   const solved = isSolved(game, dominoes)
 
+  const gameCompleteRef = useRef(isSolved(game, dominoes))
+
+  useEffect(() => {
+    if (!gameCompleteRef.current && solved) {
+      jsConfetti.addConfetti()
+      gameCompleteRef.current = true
+    }
+  }, [solved])
+
   const reset = () => {
     setDominoes(convertGameDominoesToUiDominoes(game.dominoes))
+    gameCompleteRef.current = false
   }
 
   return (
@@ -351,7 +362,6 @@ export const Game = () => {
                   style={{ ...style }}
                 >
                   {!isBackgroundCell && cell.cornerSvgs.map((svg) => svg)}
-                  {/* <pre className='text-[10px]'>{String(coords)}</pre> */}
                 </div>
               )
             })}
@@ -383,7 +393,7 @@ export const Game = () => {
                     rotate: (rotation ?? 0) + 'deg',
                     transformOrigin: 'top left',
                     translate: getTranslateFromRotation(rotation),
-                    touchAction: 'none',
+                    touchAction: solved ? 'all' : 'none',
                     pointerEvents:
                       dragState && dragState.dominoId !== uiDomino.id
                         ? 'none'
@@ -447,7 +457,7 @@ export const Game = () => {
                         width: 2 * cellSize + 'px',
                         flexShrink: 0,
                         marginLeft: -1 * 0.1 * cellSize + 'px',
-                        touchAction: 'none',
+                        touchAction: solved ? 'all' : 'none',
                         zIndex: 0,
                         rotate: (uiDomino.rotation ?? 0) + 'deg',
                         ...(uiDomino.selected
@@ -472,7 +482,7 @@ export const Game = () => {
             id={draggedDomino.id}
             domino={draggedDomino.domino}
             cellSize={cellSize}
-            className='touch-none select-none'
+            className='select-none'
             disabled={solved}
             style={{
               position: 'fixed',
@@ -484,6 +494,7 @@ export const Game = () => {
               transformOrigin: 'top left',
               translate: getTranslateFromRotation(draggedDomino.rotation),
               zIndex: 1,
+              touchAction: solved ? 'all' : 'none',
             }}
           />
         )}
@@ -491,6 +502,21 @@ export const Game = () => {
       <button className={cn(styles.resetButton)} onClick={reset}>
         Reset
       </button>
+      <span
+        className='underline self-center cursor-pointer'
+        onClick={() => {
+          const solution = game.solution
+
+          setDominoes((prev) =>
+            prev.map((d, i) => ({
+              ...d,
+              ...deriveRotatedDominoFromIndices(solution[i]),
+            })),
+          )
+        }}
+      >
+        Too hard? Reveal the solution
+      </span>
     </div>
   )
 }

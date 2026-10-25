@@ -3,7 +3,15 @@ import clsx from 'clsx'
 import type { CSSProperties } from 'react'
 import { twMerge } from 'tailwind-merge'
 import type { UiDomino } from '../components/GameHome/Game/Game'
-import type { Coords, IDomino, IGame, Region } from '../models/models'
+import {
+  LOCAL_STORAGE_PREFIX,
+  type Coords,
+  type Difficulty,
+  type IDomino,
+  type IGame,
+  type Region,
+  type Today,
+} from '../models/models'
 
 export const getGridDimensions = ({
   regions,
@@ -349,4 +357,36 @@ export const constructDateFromString = (str: string): Date => {
   const [year, month, day] = str.split('-').map(Number)
   const correctDate = new Date(year, month - 1, day)
   return correctDate
+}
+
+export const getStarCount = (today: Today): number => {
+  const fromLocalStorage = localStorage.getItem(
+    LOCAL_STORAGE_PREFIX + today.printDate,
+  )
+
+  let result = 0
+  if (fromLocalStorage) {
+    const parsed = JSON.parse(fromLocalStorage)
+    const difficulties: Difficulty[] = ['easy', 'medium', 'hard']
+    for (const difficulty of difficulties) {
+      if (!parsed[difficulty]) continue
+      if (isSolved(today[difficulty], parsed[difficulty]?.dominoes)) {
+        result++
+      }
+    }
+  }
+  return result
+}
+
+export const deriveRotatedDominoFromIndices = (
+  indices: [Coords, Coords],
+): { r: number; c: number; rotation: UiDomino['rotation'] } | null => {
+  const [[r1, c1], [r2, c2]] = indices
+
+  if (r1 === r2 && c2 === c1 + 1) return { r: r1, c: c1, rotation: 0 }
+  if (r1 === r2 - 1 && c1 === c2) return { r: r1, c: c1, rotation: 90 }
+  if (r1 === r2 && c2 === c1 - 1) return { r: r2, c: c2, rotation: 180 }
+  if (r2 === r1 - 1 && c1 === c2) return { r: r2, c: c2, rotation: 270 }
+
+  return { r: r1, c: c1, rotation: 0 }
 }
