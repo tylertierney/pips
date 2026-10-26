@@ -1,17 +1,8 @@
 import { Link } from 'react-router-dom'
 import gamesArr from '../../../games.json'
-import {
-  LOCAL_STORAGE_PREFIX,
-  type Difficulty,
-  type Today,
-} from '../../models/models'
+import { type Today } from '../../models/models'
+import { cn, constructDateFromString, getStarCount } from '../../utils/utils'
 import styles from './Home.module.scss'
-import {
-  cn,
-  constructDateFromString,
-  getStarCount,
-  isSolved,
-} from '../../utils/utils'
 
 const games = gamesArr as unknown as Today[]
 
