@@ -1,26 +1,26 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 
 export default function useTheme() {
-  const [lightTheme, setLightTheme] = useState(false)
+  const [darkTheme, setDarkTheme] = useState(false)
 
   useEffect(() => {
-    if (JSON.parse(localStorage.getItem('light-theme') ?? 'false') === true) {
-      document.body.classList.add('light-theme')
-      setLightTheme(true)
+    if (JSON.parse(localStorage.getItem('dark-theme') ?? 'false') === true) {
+      document.body.classList.add('dark-theme')
+      setDarkTheme(true)
     }
   }, [])
 
   useEffect(() => {
-    if (lightTheme) {
-      localStorage.setItem('light-theme', JSON.stringify(true))
-      document.body.classList.add('light-theme')
+    if (darkTheme) {
+      localStorage.setItem('dark-theme', JSON.stringify(true))
+      document.body.classList.add('dark-theme')
     } else {
-      document.body.classList.remove('light-theme')
-      localStorage.setItem('light-theme', JSON.stringify(false))
+      document.body.classList.remove('dark-theme')
+      localStorage.setItem('dark-theme', JSON.stringify(false))
     }
-  }, [lightTheme])
+  }, [darkTheme])
 
-  return [lightTheme, setLightTheme] as [
+  return [darkTheme, setDarkTheme] as [
     boolean,
     Dispatch<SetStateAction<boolean>>,
   ]

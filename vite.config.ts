@@ -21,14 +21,14 @@ export default defineConfig({
         background_color: '#fefef8',
         icons: [
           {
-            src: '/pips.svg',
+            src: '/pips-bg.svg',
             sizes:
               '48x48 72x72 96x96 120x120 128x128 144x144 180x180 256x256 512x512',
             type: 'image/svg+xml',
             purpose: 'any',
           },
           {
-            src: '/pips.svg',
+            src: '/pips-bg.svg',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
