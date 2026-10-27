@@ -33,8 +33,6 @@ export const Regions = ({
   submitted = false,
   dominoes,
 }: RegionsProps) => {
-  const submittedRef = useRef(submitted)
-
   const { width, height } = getGridDimensions(game)
 
   const [invalidRegions, setInvalidRegions] = useState<number[]>(
@@ -42,9 +40,8 @@ export const Regions = ({
   )
 
   useEffect(() => {
-    if (submitted === true && submittedRef.current === false) {
+    if (submitted) {
       setInvalidRegions(getInvalidRegions(game, dominoes))
-      submittedRef.current = true
     }
   }, [submitted])
 
@@ -53,6 +50,16 @@ export const Regions = ({
   const invalidRegionIndexes = invalidRegions.filter((idx) => {
     return game.regions[idx].indices.every(([r, c]) => grid[r][c] !== null)
   })
+
+  useEffect(() => {
+    game.regions.forEach((region, i) => {
+      region.indices.forEach(([r, c]) => {
+        if (grid[r][c] === null) {
+          setInvalidRegions((prev) => prev.filter((idx) => idx !== i))
+        }
+      })
+    })
+  }, [dominoes])
 
   return (
     <>
@@ -217,16 +224,6 @@ export const Regions = ({
                 </div>
               )
             })}
-            <pre
-              style={{
-                position: 'absolute',
-                top: '-50px',
-                left: 0,
-                background: 'lightgray',
-              }}
-            >
-              {JSON.stringify(invalidRegions)}
-            </pre>
           </React.Fragment>
         )
       })}

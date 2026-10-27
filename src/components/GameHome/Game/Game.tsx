@@ -15,6 +15,7 @@ import {
   cn,
   convertGameDominoesToUiDominoes,
   deriveRotatedDominoFromIndices,
+  getStarCount,
   getTranslateFromRotation,
   isSolved,
 } from '../../../utils/utils'
@@ -22,6 +23,7 @@ import { Domino } from '../../Domino/Domino'
 import { Regions } from '../../Regions/Regions'
 import styles from './Game.module.scss'
 import { usePointerEvents } from './usePointerEvents'
+import type { GameOutletContext } from '../GameHome'
 
 const getDominoesFromLocalStorage = (
   today: Today,
@@ -52,7 +54,7 @@ export type UiDomino = {
 }
 
 export const Game = () => {
-  const { today } = useOutletContext<{ today: Today }>()
+  const { today, setStarCount } = useOutletContext<GameOutletContext>()
   const { difficulty } = useParams() as { difficulty: Difficulty }
   const game = today[difficulty]
 
@@ -81,6 +83,8 @@ export const Game = () => {
         JSON.stringify({ [difficulty]: { dominoes } }),
       )
     }
+
+    setStarCount(getStarCount(today))
   }, [dominoes])
 
   const placedDominoes = dominoes.filter(

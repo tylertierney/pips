@@ -8,11 +8,10 @@ const games = gamesArr as Today[]
 
 type HeaderProps = {
   today: Today
+  starCount: number
 }
 
-export const Header = ({ today }: HeaderProps) => {
-  const starCount = getStarCount(today)
-
+export const Header = ({ today, starCount }: HeaderProps) => {
   return (
     <div className={cn(styles.header)}>
       <div className={styles.dateAndId}>
