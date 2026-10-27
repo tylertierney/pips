@@ -1,14 +1,7 @@
 import JSConfetti from 'js-confetti'
 const jsConfetti = new JSConfetti()
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type PointerEvent,
-  type SetStateAction,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
 import { useGridBuilder } from '../../../hooks/useGridBuilder'
 import {
@@ -19,68 +12,16 @@ import {
   type Today,
 } from '../../../models/models'
 import {
-  clickedDomino,
   cn,
   convertGameDominoesToUiDominoes,
   deriveRotatedDominoFromIndices,
   getTranslateFromRotation,
   isSolved,
-  isValidPlacement,
-  traverseStackToFindCell,
 } from '../../../utils/utils'
 import { Domino } from '../../Domino/Domino'
 import { Regions } from '../../Regions/Regions'
 import styles from './Game.module.scss'
-
-const resetInvalidDominoes = (
-  setDominoes: Dispatch<SetStateAction<UiDomino[]>>,
-  game: IGame,
-  width: number,
-  height: number,
-  clickedOnDominoId: number | undefined,
-) => {
-  setDominoes((arr) =>
-    arr.map((d) => {
-      if (clickedOnDominoId === d.id) return d
-
-      const isPlaced = d.r !== undefined || d.c !== undefined
-      const isSelected = Boolean(d.selected)
-
-      const validPlacementParams: Parameters<typeof isValidPlacement>[0] = {
-        targetR: d.r as number,
-        targetC: d.c as number,
-        dominoes: arr,
-        dominoId: d.id,
-        game,
-        width,
-        height,
-        rotation: d.rotation,
-      }
-
-      if (isPlaced && isSelected && !isValidPlacement(validPlacementParams)) {
-        let newRotation = 90
-        while (newRotation < 360) {
-          if (
-            isValidPlacement({
-              ...validPlacementParams,
-              rotation: d.rotation + newRotation,
-            })
-          ) {
-            return {
-              ...d,
-              selected: false,
-              rotation: d.rotation + newRotation,
-            }
-          }
-          newRotation += 90
-        }
-        return { ...d, selected: false, r: undefined, c: undefined }
-      }
-
-      return d
-    }),
-  )
-}
+import { usePointerEvents } from './usePointerEvents'
 
 const getDominoesFromLocalStorage = (
   today: Today,
@@ -146,158 +87,16 @@ export const Game = () => {
     ({ r, c }) => r !== undefined && c !== undefined,
   )
 
-  const [isHoldingDownMouse, setIsHoldingDownMouse] = useState(false)
-
-  const [dragState, setDragState] = useState<{
-    top: number
-    left: number
-    offsetX: number
-    offsetY: number
-    dominoId: number
-    rotation: number
-    domino: IDomino
-  } | null>(null)
+  const { dragState, onPointerDown, onPointerMove, onClick } = usePointerEvents(
+    {
+      dominoes,
+      setDominoes,
+      cellSize,
+      game,
+    },
+  )
 
   const draggedDomino = dominoes.find((d) => d.id === dragState?.dominoId)
-
-  useEffect(() => {
-    const cb = (e: MouseEvent) => {
-      setDragState((prev) =>
-        prev ? { ...prev, top: e.clientY, left: e.clientX } : null,
-      )
-    }
-
-    window.addEventListener('pointermove', cb)
-
-    return () => window.removeEventListener('pointermove', cb)
-  }, [])
-
-  useEffect(() => {
-    const cb = (e: MouseEvent) => {
-      const clickedOnDomino = clickedDomino(e)
-
-      if (dragState) {
-        const coords = [
-          dragState.left - dragState.offsetX + 0.5 * cellSize,
-          dragState.top - dragState.offsetY + 0.5 * cellSize,
-        ]
-        const targetingTray = Boolean(
-          document
-            .elementsFromPoint(coords[0], coords[1])
-            .find((el) => (el as HTMLElement).id === 'tray'),
-        )
-
-        if (targetingTray) {
-          setDominoes((prev) =>
-            prev.map((d) =>
-              d.id === dragState.dominoId
-                ? { ...d, r: undefined, c: undefined }
-                : { ...d },
-            ),
-          )
-        } else {
-          const targetCellCoords = traverseStackToFindCell(coords[0], coords[1])
-          if (targetCellCoords) {
-            const [targetR, targetC] = targetCellCoords
-            const valid = isValidPlacement({
-              targetR,
-              targetC,
-              rotation: dragState.rotation,
-              dominoId: dragState.dominoId,
-              width,
-              height,
-              game,
-              dominoes,
-            })
-
-            if (valid) {
-              setDominoes((prev) =>
-                prev.map((d) => {
-                  if (d.id === dragState.dominoId) {
-                    return { ...d, r: targetR, c: targetC, selected: false }
-                  }
-
-                  return {
-                    ...d,
-                  }
-                }),
-              )
-            }
-          }
-        }
-
-        setDominoes((prev) =>
-          prev.map((d) => {
-            const isInTray = d.r === undefined && d.c === undefined
-            return {
-              ...d,
-              selected: false,
-              rotation:
-                isInTray && d.rotation % 180 ? d.rotation + 90 : d.rotation,
-            }
-          }),
-        )
-      }
-
-      setDragState(null)
-      setIsHoldingDownMouse(false)
-
-      resetInvalidDominoes(setDominoes, game, width, height, clickedOnDomino)
-
-      setDominoes((prev) => prev.map((d) => ({ ...d, selected: false })))
-    }
-
-    window.addEventListener('pointerup', cb)
-
-    return () => window.removeEventListener('pointerup', cb)
-  }, [dragState, game])
-
-  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setIsHoldingDownMouse(true)
-  }
-
-  const onPointerMove = (
-    e: PointerEvent<HTMLDivElement>,
-    uiDomino: UiDomino,
-  ) => {
-    if (dragState?.dominoId) return
-
-    const movement = Math.max(Math.abs(e.movementX), Math.abs(e.movementY))
-
-    if (isHoldingDownMouse && movement > 2) {
-      const targetRect = e.currentTarget.getBoundingClientRect()
-
-      setDragState({
-        dominoId: uiDomino.id,
-        top: e.clientY,
-        left: e.clientX,
-        offsetY: e.clientY - targetRect.top,
-        offsetX: e.clientX - targetRect.left,
-        rotation: uiDomino.rotation,
-        domino: uiDomino.domino,
-      })
-    }
-  }
-
-  const onClick = (uiDomino: UiDomino) => {
-    setDominoes((prev) =>
-      prev.map((d) => {
-        const isNewSelectedDomino = uiDomino.id === d.id
-        const isInTray = d.r === undefined && d.c === undefined
-
-        return {
-          ...d,
-          selected: uiDomino.id === d.id ? true : false,
-          rotation: isNewSelectedDomino
-            ? d.rotation + 90
-            : isInTray && d.rotation % 180
-              ? d.rotation + 90
-              : d.rotation,
-        }
-      }),
-    )
-  }
 
   const solved = isSolved(game, dominoes)
 
@@ -403,10 +202,12 @@ export const Game = () => {
               ) : null
             })}
             <Regions
-              regions={game.regions}
+              submitted={dominoes.every(
+                ({ r, c }) => r !== undefined && c !== undefined,
+              )}
               cellSize={cellSize}
-              gridHeight={height}
-              gridWidth={width}
+              game={game}
+              dominoes={dominoes}
             />
           </div>
         </div>

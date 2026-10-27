@@ -95,8 +95,6 @@ export const isValidPlacement = ({
   targetC,
   dominoId,
   rotation,
-  height,
-  width,
   game,
   dominoes,
 }: {
@@ -104,11 +102,11 @@ export const isValidPlacement = ({
   targetC: number
   dominoId: number
   rotation: number
-  height: number
-  width: number
   game: IGame
   dominoes: UiDomino[]
 }): boolean => {
+  const { height, width } = getGridDimensions(game)
+
   const vertical = isVertical(rotation)
   const [targetR2, targetC2] = vertical
     ? [targetR + 1, targetC]
@@ -261,10 +259,10 @@ export const deriveIndicesFromRotatedDomino = (
 
 export const deriveGridStateFromPlacedDominoes = (
   game: IGame,
-  width: number,
-  height: number,
   dominoes: UiDomino[],
 ) => {
+  const { width, height } = getGridDimensions(game)
+
   const grid: Array<Array<number | null | undefined>> = Array.from({
     length: height,
   }).map(() => Array.from({ length: width }, () => null))
@@ -274,10 +272,6 @@ export const deriveGridStateFromPlacedDominoes = (
     const res = deriveIndicesFromRotatedDomino(uiDomino)
     if (!res) continue
     const [coords1, coords2] = res
-    if (grid[coords1[0]] === undefined) {
-      console.log(coords1)
-      console.log(grid)
-    }
     grid[coords1[0]][coords1[1]] = uiDomino.domino[0]
     grid[coords2[0]][coords2[1]] = uiDomino.domino[1]
   }
@@ -300,27 +294,60 @@ export const deriveGridStateFromPlacedDominoes = (
   return grid
 }
 
-export const isSolved = (game: IGame, dominoes: UiDomino[]) => {
-  const { width, height } = getGridDimensions(game)
+export const getInvalidRegions = (
+  game: IGame,
+  dominoes: UiDomino[],
+): number[] => {
+  const res: number[] = []
 
+  const _grid = deriveGridStateFromPlacedDominoes(game, dominoes)
+
+  // if (_grid.flat().filter((v) => v === null).length) return allInvalidRegions
+
+  const grid = _grid as number[][]
+
+  game.regions.forEach((region, idx) => {
+    const values = region.indices.map(([r, c]) => grid[r][c])
+
+    if (!isRegionSatisfied(region, values)) {
+      res.push(idx)
+    }
+  })
+
+  return res
+}
+
+export const isSolved = (game: IGame, dominoes: UiDomino[]): boolean => {
   if (
     dominoes.filter(({ r, c }) => r === undefined || c === undefined).length
   ) {
     return false
   }
 
-  const _grid = deriveGridStateFromPlacedDominoes(game, width, height, dominoes)
-
+  const _grid = deriveGridStateFromPlacedDominoes(game, dominoes)
   if (_grid.flat().filter((v) => v === null).length) return false
+  // const { width, height } = getGridDimensions(game)
 
-  const grid = _grid as number[][]
+  // if (
+  //   dominoes.filter(({ r, c }) => r === undefined || c === undefined).length
+  // ) {
+  //   return false
+  // }
 
-  for (const region of game.regions) {
-    const values = region.indices.map(([r, c]) => grid[r][c])
-    if (!isRegionSatisfied(region, values)) return false
-  }
+  // const _grid = deriveGridStateFromPlacedDominoes(game, width, height, dominoes)
 
-  return true
+  // if (_grid.flat().filter((v) => v === null).length) return false
+
+  // const grid = _grid as number[][]
+
+  // for (const region of game.regions) {
+  //   const values = region.indices.map(([r, c]) => grid[r][c])
+  //   if (!isRegionSatisfied(region, values)) return false
+  // }
+
+  // return true
+  const invalidRegions = getInvalidRegions(game, dominoes)
+  return invalidRegions.length === 0
 }
 
 export const isRegionSatisfied = (region: Region, values: number[]) => {
