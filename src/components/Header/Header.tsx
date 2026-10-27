@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import gamesArr from '../../../games.json'
 import { type Today } from '../../models/models'
-import { cn, constructDateFromString, getStarCount } from '../../utils/utils'
+import { cn, constructDateFromString } from '../../utils/utils'
 import styles from './Header.module.scss'
 
 const games = gamesArr as Today[]

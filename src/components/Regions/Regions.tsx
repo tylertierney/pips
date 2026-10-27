@@ -1,13 +1,12 @@
-import styles from './Regions.module.scss'
-import React, { useEffect, useRef, useState } from 'react'
-import type { IGame, Region, RegionType } from '../../models/models'
-import type { UiDomino } from '../GameHome/Game/Game'
+import React, { useEffect, useState } from 'react'
+import type { IGame, RegionType } from '../../models/models'
 import {
-  cn,
   deriveGridStateFromPlacedDominoes,
   getGridDimensions,
   getInvalidRegions,
 } from '../../utils/utils'
+import type { UiDomino } from '../GameHome/Game/Game'
+import styles from './Regions.module.scss'
 
 const colors = ['purple', 'pink', 'light-blue', 'orange', 'blue', 'green']
 
