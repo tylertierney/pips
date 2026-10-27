@@ -308,7 +308,7 @@ export const Game = () => {
         Reset
       </button>
       <span
-        className='underline self-center cursor-pointer'
+        className='underline self-center cursor-pointer mb-16'
         onClick={() => {
           const solution = game.solution
 
