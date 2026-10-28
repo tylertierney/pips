@@ -269,9 +269,19 @@ export const deriveGridStateFromPlacedDominoes = (
 
   for (const uiDomino of dominoes) {
     if (uiDomino.r === undefined || uiDomino.c === undefined) continue
+    if (uiDomino.r >= height || uiDomino.c >= width) continue
+    if (uiDomino.selected) continue
+
     const res = deriveIndicesFromRotatedDomino(uiDomino)
     if (!res) continue
     const [coords1, coords2] = res
+    if (
+      [...coords1, ...coords2].some((rc) => rc < 0) ||
+      [coords1[0], coords2[0]].some((r) => r >= height) ||
+      [coords1[1], coords2[1]].some((c) => c >= width)
+    ) {
+      continue
+    }
     grid[coords1[0]][coords1[1]] = uiDomino.domino[0]
     grid[coords2[0]][coords2[1]] = uiDomino.domino[1]
   }
