@@ -1,0 +1,18 @@
+{
+  "prettier.semi": false,
+  "editor.formatOnSave": true,
+  "prettier.jsxSingleQuote": true,
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  "editor.tabSize": 2,
+  "[typescript]": {
+    "editor.defaultFoldingRangeProvider": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ts": "explicit",
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.formatOnSave": true
+  },
+  "tailwindCSS.experimental.configFile": "src/index.css"
+}
